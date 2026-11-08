@@ -11,3 +11,4 @@ public interface PedidoHistorialEstadoRepository extends JpaRepository<PedidoHis
 
     List<PedidoHistorialEstado> findByPedidoIdOrderByFechaAsc(Long pedidoId);
 }
+

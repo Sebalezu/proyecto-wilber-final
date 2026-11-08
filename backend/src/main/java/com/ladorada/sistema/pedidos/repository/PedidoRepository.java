@@ -36,3 +36,4 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
             "WHERE p.id = :id")
     Optional<Pedido> findByIdConLineas(@Param("id") Long id);
 }
+

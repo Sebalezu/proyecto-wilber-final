@@ -10,3 +10,4 @@ public record ActualizarPedidoRequest(
         @Valid
         List<LineaPedidoRequest> lineas
 ) {}
+

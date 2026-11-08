@@ -34,3 +34,4 @@ public enum EstadoPedido {
         return this == DESPACHADO || this == RECHAZADO || this == CANCELADO;
     }
 }
+

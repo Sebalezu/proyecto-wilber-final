@@ -11,3 +11,4 @@ public interface PedidoLineaRepository extends JpaRepository<PedidoLinea, Long> 
 
     List<PedidoLinea> findByPedidoId(Long pedidoId);
 }
+

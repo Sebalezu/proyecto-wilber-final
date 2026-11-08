@@ -7,3 +7,4 @@ public record CambiarEstadoPedidoRequest(
         @NotNull(message = "El estado es obligatorio")
         EstadoPedido estado
 ) {}
+

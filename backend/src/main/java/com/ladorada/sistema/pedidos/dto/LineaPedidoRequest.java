@@ -11,3 +11,4 @@ public record LineaPedidoRequest(
         @Positive(message = "La cantidad debe ser un número entero mayor que cero.")
         Integer cantidad
 ) {}
+

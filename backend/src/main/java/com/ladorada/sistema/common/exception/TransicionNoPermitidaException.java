@@ -10,3 +10,4 @@ public class TransicionNoPermitidaException extends RuntimeException {
         super(String.format("Transición no permitida: %s → %s", estadoAnterior, estadoNuevo));
     }
 }
+

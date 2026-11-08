@@ -14,3 +14,4 @@ public record ClienteResumenDto(
         return new ClienteResumenDto(cliente.getId(), cliente.getNombre(), cliente.getTelefono());
     }
 }
+
