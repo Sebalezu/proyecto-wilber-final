@@ -29,3 +29,8 @@ springdoc:
 
 cors:
   allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:4200}
+
+ladorada:
+  inventario:
+    umbral-stock-bajo: ${UMBRAL_STOCK_BAJO:10}
+
