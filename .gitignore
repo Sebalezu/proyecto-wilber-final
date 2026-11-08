@@ -1,0 +1,59 @@
+# =====================================================================
+# Git Ignore - La Dorada S.A.S. (Monorepo)
+# =====================================================================
+
+# Sistema Operativo
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs y temporales
+*.log
+logs/
+temp/
+tmp/
+
+# Backend - Java & Maven
+backend/target/
+backend/*.class
+backend/*.jar
+backend/*.war
+backend/*.ear
+*.class
+*.jar
+*.war
+
+# Maven Wrapper runtime (mantener scripts y properties, ignorar distribuciones descargadas si las hay)
+backend/.mvn/timing.properties
+!backend/.mvn/wrapper/maven-wrapper.properties
+
+# Frontend - Node & Angular
+frontend/node_modules/
+frontend/dist/
+frontend/.angular/
+frontend/.angular/cache/
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+frontend/.pnpm-debug.log*
+
+# Entornos y secretos locales
+.env
+.env.local
+.env.*.local
+
+# IDEs y Editores
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.project
+.classpath
+.settings/
+*.sublime-project
+*.sublime-workspace

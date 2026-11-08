@@ -1,0 +1,213 @@
+@use '../styles/variables' as vars;
+
+.app-layout {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+// Encabezado
+.app-header {
+  background-color: vars.$color-surface;
+  border-bottom: 1px solid vars.$color-border;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  box-shadow: 0 2px 4px rgba(11, 110, 120, 0.05);
+}
+
+.header-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0.75rem 1rem;
+}
+
+.brand {
+  .brand-link {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    text-decoration: none;
+  }
+
+  .brand-logo {
+    width: 40px;
+    height: 40px;
+    background-color: vars.$color-primary;
+    color: vars.$color-surface;
+    font-weight: 700;
+    font-size: 1.125rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: vars.$border-radius-md;
+    letter-spacing: 1px;
+  }
+
+  .brand-text {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .brand-title {
+    margin: 0;
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: vars.$color-primary;
+    line-height: 1.2;
+  }
+
+  .brand-subtitle {
+    font-size: 0.75rem;
+    color: vars.$color-text-secondary;
+  }
+}
+
+// Botón Toggle Mobile
+.menu-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem;
+
+  @media (min-width: 768px) {
+    display: none;
+  }
+
+  .menu-icon {
+    display: block;
+    width: 24px;
+    height: 2px;
+    background-color: vars.$color-primary;
+    position: relative;
+    transition: vars.$transition-base;
+
+    &::before,
+    &::after {
+      content: '';
+      position: absolute;
+      width: 24px;
+      height: 2px;
+      background-color: vars.$color-primary;
+      transition: vars.$transition-base;
+    }
+
+    &::before {
+      top: -6px;
+    }
+
+    &::after {
+      bottom: -6px;
+    }
+
+    &.open {
+      background-color: transparent;
+
+      &::before {
+        transform: rotate(45deg);
+        top: 0;
+      }
+
+      &::after {
+        transform: rotate(-45deg);
+        bottom: 0;
+      }
+    }
+  }
+}
+
+// Menú de Navegación
+.nav-menu {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background-color: vars.$color-surface;
+  border-bottom: 1px solid vars.$color-border;
+  padding: 1rem 0;
+
+  &.active {
+    display: block;
+  }
+
+  @media (min-width: 768px) {
+    display: block;
+    position: static;
+    border: none;
+    padding: 0;
+  }
+}
+
+.nav-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+
+  @media (min-width: 768px) {
+    flex-direction: row;
+    align-items: center;
+    gap: 0.5rem;
+  }
+}
+
+.nav-item {
+  .nav-link {
+    display: block;
+    padding: 0.75rem 1.25rem;
+    color: vars.$color-text-secondary;
+    font-weight: 500;
+    text-decoration: none;
+    transition: vars.$transition-base;
+    border-radius: vars.$border-radius-md;
+
+    &:hover {
+      background-color: vars.$color-aqua-soft;
+      color: vars.$color-primary;
+    }
+
+    &.active {
+      background-color: vars.$color-aqua-soft;
+      color: vars.$color-primary;
+      font-weight: 700;
+    }
+  }
+}
+
+// Contenedor Principal
+.app-main {
+  flex: 1;
+  background-color: vars.$color-bg;
+}
+
+.content-wrapper {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+// Pie de página
+.app-footer {
+  background-color: vars.$color-surface;
+  border-top: 1px solid vars.$color-border;
+  padding: 1.5rem 1rem;
+  text-align: center;
+  font-size: 0.875rem;
+  color: vars.$color-text-secondary;
+}
+
+.footer-container {
+  max-width: 1200px;
+  margin: 0 auto;
+
+  p {
+    margin: 0;
+  }
+}

@@ -1,0 +1,60 @@
+/* Global styles for La Dorada S.A.S. */
+@use './styles/variables' as vars;
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  font-family: vars.$font-family-base;
+  background-color: vars.$color-bg;
+  color: vars.$color-text;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: vars.$color-primary;
+  text-decoration: none;
+  transition: vars.$transition-base;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+// Utility classes for order status badges
+.badge {
+  display: inline-block;
+  padding: 0.25rem 0.65rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  border-radius: vars.$border-radius-sm;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+
+  &--pendiente {
+    background-color: vars.$status-pendiente-bg;
+    color: vars.$status-pendiente-text;
+  }
+
+  &--confirmado {
+    background-color: vars.$status-confirmado-bg;
+    color: vars.$status-confirmado-text;
+  }
+
+  &--despachado {
+    background-color: vars.$status-despachado-bg;
+    color: vars.$status-despachado-text;
+  }
+
+  &--error,
+  &--rechazado,
+  &--cancelado {
+    background-color: vars.$status-error-bg;
+    color: vars.$status-error-text;
+  }
+}

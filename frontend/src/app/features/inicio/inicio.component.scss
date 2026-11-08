@@ -1,0 +1,22 @@
+@use '../../../styles/variables' as vars;
+
+.view-container {
+  padding: 1.5rem 1rem;
+
+  @media (min-width: 768px) {
+    padding: 2rem;
+  }
+}
+
+.view-header {
+  h2 {
+    margin: 0 0 0.5rem 0;
+    color: vars.$color-primary;
+    font-size: 1.5rem;
+  }
+
+  p {
+    margin: 0;
+    color: vars.$color-text-secondary;
+  }
+}

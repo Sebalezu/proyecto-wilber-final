@@ -1,0 +1,51 @@
+<div class="app-layout">
+  <!-- Encabezado Principal y Barra de Navegación -->
+  <header class="app-header">
+    <div class="header-container">
+      <div class="brand">
+        <a routerLink="/inicio" class="brand-link" (click)="closeMenu()">
+          <div class="brand-logo">LD</div>
+          <div class="brand-text">
+            <h1 class="brand-title">La Dorada S.A.S.</h1>
+            <span class="brand-subtitle">Pedidos e Inventario</span>
+          </div>
+        </a>
+      </div>
+
+      <button class="menu-toggle" (click)="toggleMenu()" aria-label="Abrir menú de navegación">
+        <span class="menu-icon" [class.open]="isMobileMenuOpen"></span>
+      </button>
+
+      <nav class="nav-menu" [class.active]="isMobileMenuOpen">
+        <ul class="nav-list">
+          <li class="nav-item">
+            <a routerLink="/inicio" routerLinkActive="active" (click)="closeMenu()" class="nav-link">Inicio</a>
+          </li>
+          <li class="nav-item">
+            <a routerLink="/catalogo" routerLinkActive="active" (click)="closeMenu()" class="nav-link">Catálogo</a>
+          </li>
+          <li class="nav-item">
+            <a routerLink="/nuevo-pedido" routerLinkActive="active" (click)="closeMenu()" class="nav-link">Nuevo Pedido</a>
+          </li>
+          <li class="nav-item">
+            <a routerLink="/pedidos" routerLinkActive="active" (click)="closeMenu()" class="nav-link">Pedidos</a>
+          </li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Contenedor del Router -->
+  <main class="app-main">
+    <div class="content-wrapper">
+      <router-outlet></router-outlet>
+    </div>
+  </main>
+
+  <!-- Pie de Página -->
+  <footer class="app-footer">
+    <div class="footer-container">
+      <p>&copy; La Dorada S.A.S. &ndash; Sistema de pedidos e inventario de productos de aseo.</p>
+    </div>
+  </footer>
+</div>
