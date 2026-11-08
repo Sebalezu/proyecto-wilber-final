@@ -60,6 +60,11 @@ public class PedidoService {
         if (request.lineas() == null || request.lineas().isEmpty()) {
             throw new IllegalArgumentException("El pedido debe tener al menos una línea");
         }
+        for (LineaPedidoRequest req : request.lineas()) {
+            if (req.cantidad() == null || req.cantidad() <= 0) {
+                throw new IllegalArgumentException("La cantidad debe ser un número entero mayor que cero.");
+            }
+        }
 
         Cliente cliente = clienteRepository.findById(request.clienteId())
                 .orElseThrow(() -> new RecursoNoEncontradoException("Cliente", request.clienteId()));
