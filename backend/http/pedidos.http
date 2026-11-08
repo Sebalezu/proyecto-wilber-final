@@ -1,0 +1,198 @@
+### ====================================================================
+### La Dorada S.A.S. - Peticiones HTTP del Módulo de Pedidos
+### Compatible con la extensión REST Client de VS Code / IntelliJ HTTP Client
+### ====================================================================
+
+@baseUrl = http://localhost:8080/api
+
+### --------------------------------------------------------------------
+### 1. CREACIÓN DE PEDIDOS (POST /api/pedidos)
+### --------------------------------------------------------------------
+
+### 1.1 Crear pedido en estado PENDIENTE (sin confirmar)
+POST {{baseUrl}}/pedidos
+Content-Type: application/json
+Accept: application/json
+
+{
+  "clienteId": 1,
+  "confirmar": false,
+  "lineas": [
+    {
+      "productoId": 1,
+      "cantidad": 5
+    },
+    {
+      "productoId": 2,
+      "cantidad": 3
+    }
+  ]
+}
+
+### 1.2 Crear pedido y CONFIRMAR de inmediato (descuenta stock en inventario)
+POST {{baseUrl}}/pedidos
+Content-Type: application/json
+Accept: application/json
+
+{
+  "clienteId": 2,
+  "confirmar": true,
+  "lineas": [
+    {
+      "productoId": 1,
+      "cantidad": 2
+    }
+  ]
+}
+
+### 1.3 Crear pedido con líneas repetidas (se consolidan automáticamente sumando cantidades)
+POST {{baseUrl}}/pedidos
+Content-Type: application/json
+Accept: application/json
+
+{
+  "clienteId": 1,
+  "confirmar": false,
+  "lineas": [
+    {
+      "productoId": 1,
+      "cantidad": 2
+    },
+    {
+      "productoId": 1,
+      "cantidad": 3
+    }
+  ]
+}
+
+### 1.4 Error 400: Cantidad menor o igual a cero
+POST {{baseUrl}}/pedidos
+Content-Type: application/json
+Accept: application/json
+
+{
+  "clienteId": 1,
+  "confirmar": false,
+  "lineas": [
+    {
+      "productoId": 1,
+      "cantidad": 0
+    }
+  ]
+}
+
+### 1.5 Error 409: Confirmación inmediata con stock insuficiente (rollback automático)
+POST {{baseUrl}}/pedidos
+Content-Type: application/json
+Accept: application/json
+
+{
+  "clienteId": 1,
+  "confirmar": true,
+  "lineas": [
+    {
+      "productoId": 1,
+      "cantidad": 99999
+    }
+  ]
+}
+
+### --------------------------------------------------------------------
+### 2. LISTADO Y CONSULTA DE PEDIDOS (GET /api/pedidos)
+### --------------------------------------------------------------------
+
+### 2.1 Listar todos los pedidos (formato resumen)
+GET {{baseUrl}}/pedidos
+Accept: application/json
+
+### 2.2 Listar pedidos filtrando por estado
+GET {{baseUrl}}/pedidos?estado=PENDIENTE
+Accept: application/json
+
+### 2.3 Listar pedidos filtrando por cliente
+GET {{baseUrl}}/pedidos?clienteId=1
+Accept: application/json
+
+### 2.4 Listar pedidos combinando filtros (estado + cliente)
+GET {{baseUrl}}/pedidos?estado=CONFIRMADO&clienteId=1
+Accept: application/json
+
+### 2.5 Obtener detalle completo de un pedido por ID (con líneas e historial)
+GET {{baseUrl}}/pedidos/1
+Accept: application/json
+
+### 2.6 Error 404: Pedido no encontrado
+GET {{baseUrl}}/pedidos/9999
+Accept: application/json
+
+### --------------------------------------------------------------------
+### 3. ACTUALIZACIÓN DE PEDIDOS (PUT /api/pedidos/{id})
+### --------------------------------------------------------------------
+
+### 3.1 Actualizar líneas de un pedido en estado PENDIENTE (recalcula total)
+PUT {{baseUrl}}/pedidos/1
+Content-Type: application/json
+Accept: application/json
+
+{
+  "lineas": [
+    {
+      "productoId": 1,
+      "cantidad": 4
+    },
+    {
+      "productoId": 3,
+      "cantidad": 2
+    }
+  ]
+}
+
+### --------------------------------------------------------------------
+### 4. CAMBIO DE ESTADO Y FLUJO DE CICLO DE VIDA (PATCH /api/pedidos/{id}/estado)
+### --------------------------------------------------------------------
+
+### 4.1 Confirmar pedido pendiente (descuenta existencias de inventario)
+PATCH {{baseUrl}}/pedidos/1/estado
+Content-Type: application/json
+Accept: application/json
+
+{
+  "estado": "CONFIRMADO"
+}
+
+### 4.2 Despachar pedido confirmado (estado final de entrega)
+PATCH {{baseUrl}}/pedidos/1/estado
+Content-Type: application/json
+Accept: application/json
+
+{
+  "estado": "DESPACHADO"
+}
+
+### 4.3 Cancelar pedido confirmado (restituye existencias al inventario)
+PATCH {{baseUrl}}/pedidos/2/estado
+Content-Type: application/json
+Accept: application/json
+
+{
+  "estado": "CANCELADO"
+}
+
+### 4.4 Rechazar pedido pendiente (no afecta inventario)
+PATCH {{baseUrl}}/pedidos/3/estado
+Content-Type: application/json
+Accept: application/json
+
+{
+  "estado": "RECHAZADO"
+}
+
+### 4.5 Error 409: Transición prohibida (ej. DESPACHADO -> PENDIENTE)
+PATCH {{baseUrl}}/pedidos/1/estado
+Content-Type: application/json
+Accept: application/json
+
+{
+  "estado": "PENDIENTE"
+}
+
