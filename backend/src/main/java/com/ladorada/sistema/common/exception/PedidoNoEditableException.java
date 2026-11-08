@@ -7,6 +7,6 @@ public class PedidoNoEditableException extends RuntimeException {
     }
 
     public PedidoNoEditableException(Long id, String estadoActual) {
-        super(String.format("El pedido con ID %d no se puede editar porque su estado actual es %s. Solo se permiten modificaciones en estado PENDIENTE.", id, estadoActual));
+        super(String.format("Solo se pueden editar pedidos en estado PENDIENTE (estado actual: %s)", estadoActual));
     }
 }
