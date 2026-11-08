@@ -1,0 +1,138 @@
+### ====================================================================
+### La Dorada S.A.S. - Peticiones HTTP de Catálogo e Inventario
+### Compatible con la extensión REST Client de VS Code / IntelliJ HTTP Client
+### ====================================================================
+
+@baseUrl = http://localhost:8080/api
+
+### --------------------------------------------------------------------
+### 0. Health Check
+### --------------------------------------------------------------------
+
+### Verificar estado del servicio
+GET {{baseUrl}}/health
+Accept: application/json
+
+### --------------------------------------------------------------------
+### 1. PRODUCTOS
+### --------------------------------------------------------------------
+
+### 1.1 Listar todos los productos
+GET {{baseUrl}}/productos
+Accept: application/json
+
+### 1.2 Listar productos con búsqueda por texto y activos
+GET {{baseUrl}}/productos?q=cloro&activo=true
+Accept: application/json
+
+### 1.3 Obtener producto por ID
+GET {{baseUrl}}/productos/1
+Accept: application/json
+
+### 1.4 Crear producto con código explícito
+POST {{baseUrl}}/productos
+Content-Type: application/json
+Accept: application/json
+
+{
+  "codigo": "DES-010",
+  "nombre": "Desengrasante Cítrico Industrial 4L",
+  "precio": 24500.00,
+  "existencias": 35
+}
+
+### 1.5 Crear producto sin código (generación automática ASE-XXX)
+POST {{baseUrl}}/productos
+Content-Type: application/json
+Accept: application/json
+
+{
+  "nombre": "Limpiavidrios Antiempañante 1L",
+  "precio": 9800.00,
+  "existencias": 50
+}
+
+### 1.6 Actualizar producto (edita existencias generando movimiento AJUSTE)
+PUT {{baseUrl}}/productos/1
+Content-Type: application/json
+Accept: application/json
+
+{
+  "nombre": "Detergente Líquido Industrial 5L Concentrado",
+  "precio": 39500.00,
+  "existencias": 125
+}
+
+### 1.7 Desactivar producto (baja lógica, nunca DELETE)
+PATCH {{baseUrl}}/productos/1/activo
+Content-Type: application/json
+Accept: application/json
+
+{
+  "activo": false
+}
+
+### 1.8 Reactivar producto
+PATCH {{baseUrl}}/productos/1/activo
+Content-Type: application/json
+Accept: application/json
+
+{
+  "activo": true
+}
+
+### --------------------------------------------------------------------
+### 2. CLIENTES
+### --------------------------------------------------------------------
+
+### 2.1 Listar todos los clientes
+GET {{baseUrl}}/clientes
+Accept: application/json
+
+### 2.2 Listar clientes con filtro de búsqueda por nombre
+GET {{baseUrl}}/clientes?q=Sabor
+Accept: application/json
+
+### 2.3 Obtener cliente por ID
+GET {{baseUrl}}/clientes/1
+Accept: application/json
+
+### 2.4 Crear nuevo cliente
+POST {{baseUrl}}/clientes
+Content-Type: application/json
+Accept: application/json
+
+{
+  "nombre": "Hotel y Restaurante El Mirador",
+  "telefono": "+57 312 999 4455"
+}
+
+### 2.5 Actualizar cliente existente
+PUT {{baseUrl}}/clientes/1
+Content-Type: application/json
+Accept: application/json
+
+{
+  "nombre": "Restaurante El Sabor Costeño S.A.S.",
+  "telefono": "+57 310 555 9999"
+}
+
+### --------------------------------------------------------------------
+### 3. INVENTARIO
+### --------------------------------------------------------------------
+
+### 3.1 Consultar todos los movimientos de inventario (Kardex)
+GET {{baseUrl}}/inventario/movimientos
+Accept: application/json
+
+### 3.2 Consultar movimientos filtrados por tipo (DESCUENTO, RESTITUCION, AJUSTE)
+GET {{baseUrl}}/inventario/movimientos?tipo=DESCUENTO
+Accept: application/json
+
+### 3.3 Consultar movimientos por producto específico
+GET {{baseUrl}}/inventario/movimientos?productoId=1
+Accept: application/json
+
+### 3.4 Consultar productos activos con stock bajo (existencias <= 10 o agotados)
+GET {{baseUrl}}/inventario/stock-bajo
+Accept: application/json
