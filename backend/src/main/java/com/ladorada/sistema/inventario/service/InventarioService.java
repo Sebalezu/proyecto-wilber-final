@@ -17,8 +17,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 @Service
 @Transactional
@@ -53,41 +54,48 @@ public class InventarioService {
             }
         }
 
-        // Ordenar por productoId para evitar deadlocks en bloqueos concurrentes
-        List<LineaInventario> lineasOrdenadas = lineas.stream()
-                .sorted(Comparator.comparing(LineaInventario::productoId))
-                .toList();
+        // Agrupar líneas por productoId sumando cantidades y ordenando de forma ascendente para evitar deadlocks
+        Map<Long, Integer> cantidadesAgrupadas = new TreeMap<>();
+        for (LineaInventario linea : lineas) {
+            cantidadesAgrupadas.merge(linea.productoId(), linea.cantidad(), Integer::sum);
+        }
 
+        // FASE 1: Bloquear cada producto con bloqueo pesimista y validar TODO el stock sin modificar nada
         List<Producto> productosBloqueados = new ArrayList<>();
+        List<Integer> cantidadesList = new ArrayList<>();
         List<DetalleStockInsuficiente> productosInsuficientes = new ArrayList<>();
 
-        for (LineaInventario linea : lineasOrdenadas) {
-            Producto producto = productoRepository.findByIdConBloqueo(linea.productoId())
-                    .orElseThrow(() -> new RecursoNoEncontradoException("Producto", linea.productoId()));
+        for (Map.Entry<Long, Integer> entry : cantidadesAgrupadas.entrySet()) {
+            Long productoId = entry.getKey();
+            int cantidadTotal = entry.getValue();
+
+            Producto producto = productoRepository.findByIdConBloqueo(productoId)
+                    .orElseThrow(() -> new RecursoNoEncontradoException("Producto", productoId));
 
             productosBloqueados.add(producto);
+            cantidadesList.add(cantidadTotal);
 
-            if (producto.getExistencias() < linea.cantidad()) {
+            if (producto.getExistencias() < cantidadTotal) {
                 productosInsuficientes.add(new DetalleStockInsuficiente(
                         producto.getId(),
                         producto.getNombre(),
-                        linea.cantidad(),
+                        cantidadTotal,
                         producto.getExistencias()
                 ));
             }
         }
 
-        // Si algún producto no tiene stock suficiente, abortar sin modificar nada
+        // Si algún producto no alcanza, abortar lanzando excepción con todos los detalles sin modificar entidades
         if (!productosInsuficientes.isEmpty()) {
             throw new StockInsuficienteException(productosInsuficientes);
         }
 
-        // Si todo alcanza, aplicar el descuento y registrar movimientos
-        for (int i = 0; i < lineasOrdenadas.size(); i++) {
-            LineaInventario linea = lineasOrdenadas.get(i);
+        // FASE 2: Solo si todo alcanza, aplicar los descuentos y registrar un movimiento DESCUENTO por producto
+        for (int i = 0; i < productosBloqueados.size(); i++) {
             Producto producto = productosBloqueados.get(i);
+            int cantidad = cantidadesList.get(i);
 
-            int nuevoStock = producto.getExistencias() - linea.cantidad();
+            int nuevoStock = producto.getExistencias() - cantidad;
             producto.setExistencias(nuevoStock);
             productoRepository.save(producto);
 
@@ -95,7 +103,7 @@ public class InventarioService {
                     producto.getId(),
                     pedidoId,
                     TipoMovimiento.DESCUENTO,
-                    linea.cantidad(),
+                    cantidad,
                     LocalDateTime.now()
             );
             movimientoInventarioRepository.save(movimiento);
@@ -117,23 +125,27 @@ public class InventarioService {
             }
         }
 
-        // Ordenar por productoId para evitar deadlocks
-        List<LineaInventario> lineasOrdenadas = lineas.stream()
-                .sorted(Comparator.comparing(LineaInventario::productoId))
-                .toList();
+        // Agrupar líneas por productoId sumando cantidades y ordenando de forma ascendente para evitar deadlocks
+        Map<Long, Integer> cantidadesAgrupadas = new TreeMap<>();
+        for (LineaInventario linea : lineas) {
+            cantidadesAgrupadas.merge(linea.productoId(), linea.cantidad(), Integer::sum);
+        }
 
-        for (LineaInventario linea : lineasOrdenadas) {
-            Producto producto = productoRepository.findByIdConBloqueo(linea.productoId())
-                    .orElseThrow(() -> new RecursoNoEncontradoException("Producto", linea.productoId()));
+        for (Map.Entry<Long, Integer> entry : cantidadesAgrupadas.entrySet()) {
+            Long productoId = entry.getKey();
+            int cantidadTotal = entry.getValue();
 
-            producto.setExistencias(producto.getExistencias() + linea.cantidad());
+            Producto producto = productoRepository.findByIdConBloqueo(productoId)
+                    .orElseThrow(() -> new RecursoNoEncontradoException("Producto", productoId));
+
+            producto.setExistencias(producto.getExistencias() + cantidadTotal);
             productoRepository.save(producto);
 
             MovimientoInventario movimiento = new MovimientoInventario(
                     producto.getId(),
                     pedidoId,
                     TipoMovimiento.RESTITUCION,
-                    linea.cantidad(),
+                    cantidadTotal,
                     LocalDateTime.now()
             );
             movimientoInventarioRepository.save(movimiento);

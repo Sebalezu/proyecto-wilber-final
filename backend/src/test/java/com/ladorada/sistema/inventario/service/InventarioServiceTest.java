@@ -8,6 +8,7 @@ import com.ladorada.sistema.inventario.model.MovimientoInventario;
 import com.ladorada.sistema.inventario.model.TipoMovimiento;
 import com.ladorada.sistema.inventario.repository.MovimientoInventarioRepository;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -172,5 +173,107 @@ class InventarioServiceTest {
                 IllegalArgumentException.class,
                 () -> inventarioService.restituir(100L, lineas)
         );
+    }
+
+    @Test
+    @DisplayName("(a) dos líneas del mismo producto cuya suma supera el stock -> error")
+    void descontar_lineasRepetidasSuperanStock_lanzaStockInsuficienteException() {
+        when(productoRepository.findByIdConBloqueo(1L)).thenReturn(Optional.of(productoCloro)); // 8 disponibles
+
+        // Dos líneas del producto 1: 5 + 4 = 9 > 8
+        List<LineaInventario> lineas = List.of(
+                new LineaInventario(1L, 5),
+                new LineaInventario(1L, 4)
+        );
+
+        StockInsuficienteException ex = assertThrows(
+                StockInsuficienteException.class,
+                () -> inventarioService.descontar(200L, lineas)
+        );
+
+        assertEquals("Cloro 2 L: pediste 9 y hay 8 disponibles", ex.getMessage());
+        assertEquals(8, productoCloro.getExistencias()); // No se modificó
+        verify(productoRepository, never()).save(any(Producto.class));
+        verify(movimientoInventarioRepository, never()).save(any(MovimientoInventario.class));
+    }
+
+    @Test
+    @DisplayName("(b) primer producto con stock y segundo sin stock -> verifica que NO se llamó a save ni se modificaron existencias del primero")
+    void descontar_primerProductoConStockYSegundoSinStock_noModificaElPrimeroNiLlamaSave() {
+        // Orden ascendente por productoId: 1L (Cloro, stock 8), 2L (Detergente, stock 20)
+        // Para que el primero tenga stock y el segundo no:
+        // Producto 1 (Cloro): pedimos 5 (hay 8 -> suficiente)
+        // Producto 2 (Detergente): pedimos 25 (hay 20 -> insuficiente)
+        when(productoRepository.findByIdConBloqueo(1L)).thenReturn(Optional.of(productoCloro));
+        when(productoRepository.findByIdConBloqueo(2L)).thenReturn(Optional.of(productoDetergente));
+
+        List<LineaInventario> lineas = List.of(
+                new LineaInventario(1L, 5),
+                new LineaInventario(2L, 25)
+        );
+
+        StockInsuficienteException ex = assertThrows(
+                StockInsuficienteException.class,
+                () -> inventarioService.descontar(300L, lineas)
+        );
+
+        assertTrue(ex.getMessage().contains("Detergente 5L: pediste 25 y hay 20 disponibles"));
+        // El primer producto NO debe haber sido alterado
+        assertEquals(8, productoCloro.getExistencias());
+        assertEquals(20, productoDetergente.getExistencias());
+        // NO se debe haber llamado a save para ningún producto ni movimiento
+        verify(productoRepository, never()).save(any(Producto.class));
+        verify(movimientoInventarioRepository, never()).save(any(MovimientoInventario.class));
+    }
+
+    @Test
+    @DisplayName("(c) líneas repetidas válidas se agrupan en un solo movimiento")
+    void descontar_lineasRepetidasValidas_seAgrupanEnUnSoloMovimientoYDescuento() {
+        when(productoRepository.findByIdConBloqueo(1L)).thenReturn(Optional.of(productoCloro)); // 8 disponibles
+
+        // Dos líneas del producto 1: 2 + 3 = 5 <= 8
+        List<LineaInventario> lineas = List.of(
+                new LineaInventario(1L, 2),
+                new LineaInventario(1L, 3)
+        );
+
+        inventarioService.descontar(400L, lineas);
+
+        assertEquals(3, productoCloro.getExistencias()); // 8 - 5 = 3
+        verify(productoRepository, times(1)).save(productoCloro);
+
+        ArgumentCaptor<MovimientoInventario> captor = ArgumentCaptor.forClass(MovimientoInventario.class);
+        verify(movimientoInventarioRepository, times(1)).save(captor.capture());
+
+        MovimientoInventario mov = captor.getValue();
+        assertEquals(TipoMovimiento.DESCUENTO, mov.getTipo());
+        assertEquals(5, mov.getCantidad()); // Cantidad consolidada
+        assertEquals(1L, mov.getProductoId());
+        assertEquals(400L, mov.getPedidoId());
+    }
+
+    @Test
+    @DisplayName("(c-restituir) líneas repetidas válidas en restituir se agrupan en un solo movimiento")
+    void restituir_lineasRepetidasValidas_seAgrupanEnUnSoloMovimiento() {
+        when(productoRepository.findByIdConBloqueo(1L)).thenReturn(Optional.of(productoCloro)); // 8 disponibles
+
+        List<LineaInventario> lineas = List.of(
+                new LineaInventario(1L, 2),
+                new LineaInventario(1L, 3)
+        );
+
+        inventarioService.restituir(500L, lineas);
+
+        assertEquals(13, productoCloro.getExistencias()); // 8 + 5 = 13
+        verify(productoRepository, times(1)).save(productoCloro);
+
+        ArgumentCaptor<MovimientoInventario> captor = ArgumentCaptor.forClass(MovimientoInventario.class);
+        verify(movimientoInventarioRepository, times(1)).save(captor.capture());
+
+        MovimientoInventario mov = captor.getValue();
+        assertEquals(TipoMovimiento.RESTITUCION, mov.getTipo());
+        assertEquals(5, mov.getCantidad()); // Cantidad consolidada
+        assertEquals(1L, mov.getProductoId());
+        assertEquals(500L, mov.getPedidoId());
     }
 }
