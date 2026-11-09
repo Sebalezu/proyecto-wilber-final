@@ -4,16 +4,18 @@
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  background-color: var(--color-bg);
+  color: var(--color-text);
 }
 
 // Encabezado
 .app-header {
-  background-color: vars.$color-surface;
-  border-bottom: 1px solid vars.$color-border;
+  background-color: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
   position: sticky;
   top: 0;
   z-index: 1000;
-  box-shadow: 0 2px 4px rgba(11, 110, 120, 0.05);
+  box-shadow: 0 2px 4px var(--color-shadow);
 }
 
 .header-container {
@@ -36,15 +38,17 @@
   .brand-logo {
     width: 40px;
     height: 40px;
-    background-color: vars.$color-primary;
-    color: vars.$color-surface;
-    font-weight: 700;
-    font-size: 1.125rem;
+    background-color: var(--color-primary);
+    color: #FFFFFF;
     display: flex;
     align-items: center;
     justify-content: center;
     border-radius: vars.$border-radius-md;
-    letter-spacing: 1px;
+    transition: vars.$transition-base;
+
+    .water-drop-icon {
+      display: block;
+    }
   }
 
   .brand-text {
@@ -56,13 +60,13 @@
     margin: 0;
     font-size: 1.125rem;
     font-weight: 700;
-    color: vars.$color-primary;
+    color: var(--color-primary);
     line-height: 1.2;
   }
 
   .brand-subtitle {
     font-size: 0.75rem;
-    color: vars.$color-text-secondary;
+    color: var(--color-text-secondary);
   }
 }
 
@@ -84,7 +88,7 @@
     display: block;
     width: 24px;
     height: 2px;
-    background-color: vars.$color-primary;
+    background-color: var(--color-primary);
     position: relative;
     transition: vars.$transition-base;
 
@@ -94,7 +98,7 @@
       position: absolute;
       width: 24px;
       height: 2px;
-      background-color: vars.$color-primary;
+      background-color: var(--color-primary);
       transition: vars.$transition-base;
     }
 
@@ -103,7 +107,7 @@
     }
 
     &::after {
-      bottom: -6px;
+      top: 6px;
     }
 
     &.open {
@@ -116,7 +120,7 @@
 
       &::after {
         transform: rotate(-45deg);
-        bottom: 0;
+        top: 0;
       }
     }
   }
@@ -125,59 +129,62 @@
 // Menú de Navegación
 .nav-menu {
   display: none;
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  background-color: vars.$color-surface;
-  border-bottom: 1px solid vars.$color-border;
-  padding: 1rem 0;
 
   &.active {
     display: block;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background-color: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+    box-shadow: 0 4px 6px var(--color-shadow);
   }
 
   @media (min-width: 768px) {
     display: block;
     position: static;
-    border: none;
-    padding: 0;
+    background-color: transparent;
+    border-bottom: none;
+    box-shadow: none;
   }
 }
 
 .nav-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
   display: flex;
   flex-direction: column;
+  list-style: none;
+  margin: 0;
+  padding: 1rem;
+  gap: 0.5rem;
 
   @media (min-width: 768px) {
     flex-direction: row;
-    align-items: center;
-    gap: 0.5rem;
+    padding: 0;
+    gap: 1.5rem;
   }
 }
 
 .nav-item {
   .nav-link {
     display: block;
-    padding: 0.75rem 1.25rem;
-    color: vars.$color-text-secondary;
+    padding: 0.5rem 0.75rem;
+    color: var(--color-text-secondary);
     font-weight: 500;
-    text-decoration: none;
+    font-size: 0.9375rem;
+    border-radius: vars.$border-radius-sm;
     transition: vars.$transition-base;
-    border-radius: vars.$border-radius-md;
 
     &:hover {
-      background-color: vars.$color-aqua-soft;
-      color: vars.$color-primary;
+      color: var(--color-primary);
+      background-color: var(--color-aqua-soft);
+      text-decoration: none;
     }
 
     &.active {
-      background-color: vars.$color-aqua-soft;
-      color: vars.$color-primary;
+      color: var(--color-primary);
       font-weight: 700;
+      background-color: var(--color-aqua-soft);
     }
   }
 }
@@ -185,7 +192,11 @@
 // Contenedor Principal
 .app-main {
   flex: 1;
-  background-color: vars.$color-bg;
+  padding: 1.5rem 1rem;
+
+  @media (min-width: 768px) {
+    padding: 2rem 1.5rem;
+  }
 }
 
 .content-wrapper {
@@ -193,14 +204,14 @@
   margin: 0 auto;
 }
 
-// Pie de página
+// Pie de Página
 .app-footer {
-  background-color: vars.$color-surface;
-  border-top: 1px solid vars.$color-border;
-  padding: 1.5rem 1rem;
+  background-color: var(--color-surface);
+  border-top: 1px solid var(--color-border);
+  padding: 1.25rem 1rem;
   text-align: center;
-  font-size: 0.875rem;
-  color: vars.$color-text-secondary;
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
 }
 
 .footer-container {

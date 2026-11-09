@@ -1,6 +1,482 @@
-<div class="view-container">
-  <div class="view-header">
-    <h2>Detalle de Pedido #{{ pedidoId }}</h2>
-    <p>Información detallada, líneas de productos y trazabilidad de estado.</p>
+<div class="pedido-detalle-container">
+  <!-- Navegación Superior -->
+  <div class="top-nav-bar">
+    <a routerLink="/pedidos" class="btn btn--outline btn--sm">
+      &larr; Volver al Listado de Pedidos
+    </a>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="cargando" class="loading-state card">
+    <div class="spinner"></div>
+    <p>Cargando información del pedido...</p>
+  </div>
+
+  <!-- Error al cargar pedido -->
+  <div *ngIf="!cargando && errorMensaje && !pedido" class="alert alert--error card">
+    <p>{{ errorMensaje }}</p>
+    <a routerLink="/pedidos" class="btn btn--secondary btn--sm mt-2">Ir a Pedidos</a>
+  </div>
+
+  <!-- Contenido Principal del Pedido -->
+  <div *ngIf="!cargando && pedido" class="detalle-content">
+    
+    <!-- Encabezado Principal con ID y Estado -->
+    <div class="detalle-header-card card">
+      <div class="header-main-info">
+        <div class="order-title-group">
+          <span class="order-label">ORDEN DE PEDIDO</span>
+          <h1 class="order-id">#{{ pedido.id }}</h1>
+        </div>
+        <div class="order-status-group">
+          <span class="badge badge--lg" [ngClass]="'badge--' + pedido.estado.toLowerCase()">
+            {{ pedido.estado }}
+          </span>
+          <span class="stock-tag" [class.stock-tag--deducted]="pedido.stockDescontado">
+            {{ pedido.stockDescontado ? '✓ Stock Descontado' : '○ Stock No Descontado' }}
+          </span>
+        </div>
+      </div>
+      <div class="header-meta">
+        <span>Fecha de creación: <strong>{{ pedido.fecha | date:'dd/MM/yyyy HH:mm' }}</strong></span>
+        <span class="order-total-highlight">Total: <strong>${{ pedido.total | number:'1.2-2' }} COP</strong></span>
+      </div>
+    </div>
+
+    <!-- Mensaje de Éxito si aplica -->
+    <div *ngIf="mensajeExito" class="alert alert--success">
+      {{ mensajeExito }}
+    </div>
+
+    <!-- Banner de Conflicto de Stock (Error 409) -->
+    <div *ngIf="errorMensaje" class="alert alert--error stock-conflict-banner">
+      <div class="stock-conflict-header">
+        <span class="stock-conflict-icon">⚠️</span>
+        <div class="stock-conflict-text">
+          <strong>{{ errorMensaje }}</strong>
+          <p *ngIf="detallesStock.length > 0" class="stock-conflict-subtitle">
+            El pedido no puede confirmarse debido a que uno o más productos no cuentan con existencias suficientes:
+          </p>
+        </div>
+      </div>
+
+      <div *ngIf="detallesStock.length > 0" class="stock-items-table-wrapper">
+        <table class="stock-items-table">
+          <thead>
+            <tr>
+              <th>Producto</th>
+              <th>Solicitado</th>
+              <th>Disponible</th>
+              <th>Déficit</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let det of detallesStock">
+              <td><strong>{{ det.nombre }}</strong></td>
+              <td>{{ det.solicitado }}</td>
+              <td>{{ det.disponible }}</td>
+              <td class="text-danger font-bold">-{{ det.solicitado - det.disponible }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Stepper / Ciclo de Vida Visual -->
+    <div class="lifecycle-card card">
+      <h3 class="card-section-title">Flujo del Ciclo de Vida</h3>
+
+      <!-- Flujo Regular (Pendiente -> Confirmado -> Despachado) -->
+      <div *ngIf="pedido.estado !== 'RECHAZADO' && pedido.estado !== 'CANCELADO'" class="stepper">
+        <div class="step" [class.step--completed]="esPasoCompletado('PENDIENTE')" [class.step--active]="esPasoActivo('PENDIENTE')">
+          <div class="step-indicator">
+            <span *ngIf="esPasoCompletado('PENDIENTE')">✓</span>
+            <span *ngIf="!esPasoCompletado('PENDIENTE')">1</span>
+          </div>
+          <div class="step-content">
+            <span class="step-title">Pendiente</span>
+            <span class="step-desc">Pedido registrado</span>
+          </div>
+        </div>
+
+        <div class="step-line" [class.step-line--completed]="esPasoCompletado('PENDIENTE')"></div>
+
+        <div class="step" [class.step--completed]="esPasoCompletado('CONFIRMADO')" [class.step--active]="esPasoActivo('CONFIRMADO')">
+          <div class="step-indicator">
+            <span *ngIf="esPasoCompletado('CONFIRMADO')">✓</span>
+            <span *ngIf="!esPasoCompletado('CONFIRMADO')">2</span>
+          </div>
+          <div class="step-content">
+            <span class="step-title">Confirmado</span>
+            <span class="step-desc">Stock descontado</span>
+          </div>
+        </div>
+
+        <div class="step-line" [class.step-line--completed]="esPasoCompletado('CONFIRMADO')"></div>
+
+        <div class="step" [class.step--completed]="esPasoCompletado('DESPACHADO')" [class.step--active]="esPasoActivo('DESPACHADO')">
+          <div class="step-indicator">
+            <span *ngIf="pedido.estado === 'DESPACHADO'">✓</span>
+            <span *ngIf="pedido.estado !== 'DESPACHADO'">3</span>
+          </div>
+          <div class="step-content">
+            <span class="step-title">Despachado</span>
+            <span class="step-desc">Entrega realizada</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Flujo Interrumpido (Rechazado o Cancelado) -->
+      <div *ngIf="pedido.estado === 'RECHAZADO' || pedido.estado === 'CANCELADO'" class="terminal-banner" [ngClass]="'terminal-banner--' + pedido.estado.toLowerCase()">
+        <span class="terminal-banner-icon">✕</span>
+        <div>
+          <h4>Pedido {{ pedido.estado }}</h4>
+          <p *ngIf="pedido.estado === 'CANCELADO'">
+            La orden fue cancelada. Todos los productos y existencias asociadas fueron restituidos debidamente al inventario general.
+          </p>
+          <p *ngIf="pedido.estado === 'RECHAZADO'">
+            La orden fue rechazada antes de su confirmación. No se generaron descuentos de stock.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Barra de Acciones y Transición de Estados -->
+    <div class="actions-card card">
+      <div class="actions-header">
+        <h3 class="card-section-title">Acciones Disponibles</h3>
+        <span class="state-hint">Estado actual: <strong>{{ pedido.estado }}</strong></span>
+      </div>
+
+      <!-- Acciones para PENDIENTE -->
+      <div *ngIf="pedido.estado === 'PENDIENTE'" class="action-buttons-group">
+        <button
+          type="button"
+          class="btn btn--primary"
+          [disabled]="accionEnProgreso || modoEdicionLineas"
+          (click)="solicitarConfirmar()"
+        >
+          <span>✓</span> Confirmar Pedido
+        </button>
+
+        <button
+          type="button"
+          class="btn btn--secondary"
+          [disabled]="accionEnProgreso"
+          (click)="iniciarEdicionLineas()"
+        >
+          <span>✎</span> Modificar Líneas
+        </button>
+
+        <button
+          type="button"
+          class="btn btn--outline btn--danger-outline"
+          [disabled]="accionEnProgreso || modoEdicionLineas"
+          (click)="solicitarRechazar()"
+        >
+          Rechazar Pedido
+        </button>
+
+        <button
+          type="button"
+          class="btn btn--outline"
+          [disabled]="accionEnProgreso || modoEdicionLineas"
+          (click)="solicitarCancelar()"
+        >
+          Cancelar Pedido
+        </button>
+      </div>
+
+      <!-- Acciones para CONFIRMADO -->
+      <div *ngIf="pedido.estado === 'CONFIRMADO'" class="action-buttons-group">
+        <button
+          type="button"
+          class="btn btn--primary"
+          [disabled]="accionEnProgreso"
+          (click)="solicitarDespachar()"
+        >
+          <span>🚚</span> Despachar Pedido
+        </button>
+
+        <button
+          type="button"
+          class="btn btn--danger"
+          [disabled]="accionEnProgreso"
+          (click)="solicitarCancelar()"
+        >
+          <span>✕</span> Cancelar Pedido (Restituye Stock)
+        </button>
+      </div>
+
+      <!-- Estado Terminal -->
+      <div *ngIf="esEstadoTerminal()" class="terminal-status-info">
+        <p>🔒 <strong>Este pedido está cerrado.</strong> Se encuentra en estado terminal ({{ pedido.estado }}), por lo cual no admite más modificaciones ni transiciones.</p>
+      </div>
+    </div>
+
+    <!-- Grilla de Información: Cliente y Detalles -->
+    <div class="info-grid">
+      <!-- Tarjeta del Cliente -->
+      <div class="info-card card">
+        <h3 class="card-section-title">Datos del Cliente</h3>
+        <div class="info-list">
+          <div class="info-item">
+            <span class="info-label">Nombre / Razón Social:</span>
+            <span class="info-value font-bold">{{ pedido.cliente.nombre }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Teléfono:</span>
+            <span class="info-value">{{ pedido.cliente.telefono || 'No registrado' }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tarjeta de Resumen Económico -->
+      <div class="info-card card">
+        <h3 class="card-section-title">Resumen de la Orden</h3>
+        <div class="info-list">
+          <div class="info-item">
+            <span class="info-label">Cantidad de líneas:</span>
+            <span class="info-value">{{ pedido.lineas.length }} producto(s)</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Descuento de Stock:</span>
+            <span class="info-value font-bold" [style.color]="pedido.stockDescontado ? '#0B6E78' : '#7A5200'">
+              {{ pedido.stockDescontado ? 'Aplicado en inventario' : 'No aplicado' }}
+            </span>
+          </div>
+          <div class="info-item total-item">
+            <span class="info-label">Total a Pagar:</span>
+            <span class="info-value total-highlight">${{ pedido.total | number:'1.2-2' }} COP</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabla de Líneas del Pedido (Modo Vista Normal) -->
+    <div *ngIf="!modoEdicionLineas" class="lines-card card">
+      <div class="card-header-flex">
+        <h3 class="card-section-title">Líneas de Productos</h3>
+        <button
+          *ngIf="pedido.estado === 'PENDIENTE'"
+          type="button"
+          class="btn btn--outline btn--sm"
+          (click)="iniciarEdicionLineas()"
+        >
+          <span>✎</span> Editar Productos
+        </button>
+      </div>
+
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Código</th>
+              <th>Producto</th>
+              <th class="text-center">Cantidad</th>
+              <th class="text-right">Precio Unitario (COP)</th>
+              <th class="text-right">Subtotal (COP)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let linea of pedido.lineas; let idx = index">
+              <td>{{ idx + 1 }}</td>
+              <td><code>{{ linea.productoCodigo || '—' }}</code></td>
+              <td><strong>{{ linea.productoNombre || 'Producto #' + linea.productoId }}</strong></td>
+              <td class="text-center font-bold">{{ linea.cantidad }}</td>
+              <td class="text-right">${{ (linea.precioUnitario || 0) | number:'1.2-2' }}</td>
+              <td class="text-right font-bold">${{ (linea.subtotal || 0) | number:'1.2-2' }}</td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr class="table-total-row">
+              <td colspan="5" class="text-right font-bold">TOTAL PEDIDO:</td>
+              <td class="text-right font-bold total-val">${{ pedido.total | number:'1.2-2' }} COP</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+
+    <!-- Modo Edición de Líneas (Exclusivo para PENDIENTE) -->
+    <div *ngIf="modoEdicionLineas" class="lines-edit-card card">
+      <div class="card-header-flex">
+        <div>
+          <h3 class="card-section-title">Editar Líneas del Pedido #{{ pedido.id }}</h3>
+          <p class="edit-subtitle">Puede agregar o quitar productos y modificar las cantidades solicitadas.</p>
+        </div>
+        <button type="button" class="btn btn--outline btn--sm" (click)="cancelarEdicionLineas()">
+          Cancelar
+        </button>
+      </div>
+
+      <div class="lineas-edit-list">
+        <div *ngFor="let l of lineasEdicion; let i = index" class="linea-edit-row">
+          <div class="col-index">
+            <span class="index-badge">{{ i + 1 }}</span>
+          </div>
+
+          <div class="col-product">
+            <label class="field-label">Producto:</label>
+            <select
+              class="form-control"
+              [(ngModel)]="l.productoId"
+              (change)="onProductoEdicionChange(l)"
+            >
+              <option *ngFor="let p of productosActivos" [value]="p.id">
+                [{{ p.codigo }}] {{ p.nombre }} — ${{ p.precio | number:'1.2-2' }} (Stock: {{ p.existencias }})
+              </option>
+            </select>
+          </div>
+
+          <div class="col-qty">
+            <label class="field-label">Cantidad:</label>
+            <input
+              type="number"
+              class="form-control"
+              min="1"
+              [(ngModel)]="l.cantidad"
+            />
+          </div>
+
+          <div class="col-price">
+            <label class="field-label">Precio Unit.:</label>
+            <span class="price-val">${{ l.precioUnitario | number:'1.2-2' }}</span>
+          </div>
+
+          <div class="col-subtotal">
+            <label class="field-label">Subtotal:</label>
+            <span class="subtotal-val">${{ calcularSubtotalEdicion(l) | number:'1.2-2' }}</span>
+          </div>
+
+          <div class="col-action">
+            <button
+              type="button"
+              class="btn-icon btn-icon--danger"
+              title="Eliminar producto"
+              [disabled]="lineasEdicion.length <= 1"
+              (click)="quitarLineaEdicion(i)"
+            >
+              🗑️
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="edit-toolbar">
+        <button
+          type="button"
+          class="btn btn--secondary btn--sm"
+          (click)="agregarLineaEdicion()"
+        >
+          + Agregar Otro Producto
+        </button>
+
+        <div class="edit-total-preview">
+          <span>Nuevo Total Estimado:</span>
+          <strong>${{ calcularTotalEdicion() | number:'1.2-2' }} COP</strong>
+        </div>
+      </div>
+
+      <div class="edit-actions-footer">
+        <button
+          type="button"
+          class="btn btn--outline"
+          [disabled]="guardandoLineas"
+          (click)="cancelarEdicionLineas()"
+        >
+          Descartar Cambios
+        </button>
+
+        <button
+          type="button"
+          class="btn btn--primary"
+          [disabled]="guardandoLineas"
+          (click)="guardarCambiosLineas()"
+        >
+          <span *ngIf="guardandoLineas">Guardando...</span>
+          <span *ngIf="!guardandoLineas">Guardar Cambios</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Historial Cronológico de Cambios de Estado -->
+    <div class="history-card card">
+      <h3 class="card-section-title">Historial de Transiciones de Estado</h3>
+
+      <div *ngIf="pedido.historial.length === 0" class="empty-history">
+        <p>No se registran cambios de estado para este pedido.</p>
+      </div>
+
+      <div *ngIf="pedido.historial.length > 0" class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Fecha y Hora</th>
+              <th>Estado Anterior</th>
+              <th class="text-center">&rarr;</th>
+              <th>Nuevo Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let h of pedido.historial">
+              <td>{{ h.fecha | date:'dd/MM/yyyy HH:mm:ss' }}</td>
+              <td>
+                <span *ngIf="h.estadoAnterior" class="badge" [ngClass]="'badge--' + h.estadoAnterior.toLowerCase()">
+                  {{ h.estadoAnterior }}
+                </span>
+                <span *ngIf="!h.estadoAnterior" class="text-muted font-mono">
+                  [CREACIÓN INICIAL]
+                </span>
+              </td>
+              <td class="text-center font-bold text-muted">&rarr;</td>
+              <td>
+                <span class="badge" [ngClass]="'badge--' + h.estadoNuevo.toLowerCase()">
+                  {{ h.estadoNuevo }}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Modal de Confirmación de Transición de Estado -->
+  <div *ngIf="mostrarModalConfirmacion" class="modal-backdrop">
+    <div class="modal card">
+      <div class="modal-header">
+        <h3 class="modal-title">{{ modalTitulo }}</h3>
+        <button type="button" class="btn-close" (click)="cerrarModalConfirmacion()">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <p>{{ modalMensaje }}</p>
+        <div *ngIf="modalAdvertencia" class="modal-alert-warning">
+          <strong>⚠️ Nota Importante:</strong>
+          <p>{{ modalAdvertencia }}</p>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button
+          type="button"
+          class="btn btn--outline"
+          (click)="cerrarModalConfirmacion()"
+        >
+          Cancelar
+        </button>
+        <button
+          type="button"
+          class="btn"
+          [ngClass]="modalBotonClase"
+          (click)="ejecutarTransicion()"
+        >
+          Confirmar Acción
+        </button>
+      </div>
+    </div>
   </div>
 </div>

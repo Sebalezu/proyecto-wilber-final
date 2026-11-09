@@ -4,7 +4,11 @@
     <div class="header-container">
       <div class="brand">
         <a routerLink="/inicio" class="brand-link" (click)="closeMenu()">
-          <div class="brand-logo">LD</div>
+          <div class="brand-logo" aria-label="Logo gota de agua La Dorada">
+            <svg class="water-drop-icon" viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
+              <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>
+            </svg>
+          </div>
           <div class="brand-text">
             <h1 class="brand-title">La Dorada S.A.S.</h1>
             <span class="brand-subtitle">Pedidos e Inventario</span>

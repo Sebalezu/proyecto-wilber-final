@@ -1,22 +1,224 @@
 @use '../../../styles/variables' as vars;
 
-.view-container {
-  padding: 1.5rem 1rem;
+.inicio-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+// Hero Banner Institucional
+.hero-banner {
+  background: linear-gradient(135deg, var(--color-aqua-soft) 0%, var(--color-surface) 100%);
+  border: 1px solid var(--color-border);
+  border-radius: vars.$border-radius-lg;
+  padding: 1.75rem 1.25rem;
+  box-shadow: 0 4px 12px var(--color-shadow);
 
   @media (min-width: 768px) {
-    padding: 2rem;
+    padding: 2.5rem 2rem;
+  }
+
+  .hero-content {
+    max-width: 750px;
+  }
+
+  .hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.25rem 0.75rem;
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 9999px;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--color-primary);
+    margin-bottom: 0.75rem;
+  }
+
+  .hero-title {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.625rem;
+    font-weight: 800;
+    color: var(--color-text);
+    letter-spacing: -0.5px;
+
+    @media (min-width: 768px) {
+      font-size: 2.25rem;
+    }
+  }
+
+  .hero-subtitle {
+    margin: 0 0 1.25rem 0;
+    font-size: 0.9375rem;
+    color: var(--color-text-secondary);
+    line-height: 1.5;
+
+    @media (min-width: 768px) {
+      font-size: 1.0625rem;
+    }
+  }
+
+  .hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
   }
 }
 
-.view-header {
-  h2 {
-    margin: 0 0 0.5rem 0;
-    color: vars.$color-primary;
+// Grid de Métricas
+.metrics-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+
+  @media (min-width: 576px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @media (min-width: 992px) {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.metric-card {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: vars.$border-radius-lg;
+  padding: 1.25rem;
+  box-shadow: 0 2px 6px var(--color-shadow);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 0.75rem;
+  transition: vars.$transition-base;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px var(--color-shadow);
+  }
+
+  .metric-icon {
     font-size: 1.5rem;
   }
 
-  p {
-    margin: 0;
-    color: vars.$color-text-secondary;
+  .metric-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
   }
+
+  .metric-label {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .metric-value {
+    font-size: 1.875rem;
+    font-weight: 800;
+    color: var(--color-text);
+    line-height: 1;
+  }
+
+  .metric-link {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--color-primary);
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+
+  &--pendiente {
+    border-left: 4px solid #7A5200;
+  }
+
+  &--confirmado {
+    border-left: 4px solid #14508A;
+  }
+
+  &--despachado {
+    border-left: 4px solid #17673F;
+  }
+
+  &--alerta {
+    border-left: 4px solid #8F2A21;
+  }
+}
+
+// Sección de Alertas
+.section-card {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: vars.$border-radius-lg;
+  padding: 1.5rem;
+  box-shadow: 0 2px 6px var(--color-shadow);
+}
+
+.section-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+
+  .section-title {
+    margin: 0 0 0.25rem 0;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--color-text);
+  }
+
+  .section-subtitle {
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--color-text-secondary);
+  }
+}
+
+.loading-state,
+.empty-state {
+  text-align: center;
+  padding: 2.5rem 1rem;
+  color: var(--color-text-secondary);
+
+  p {
+    margin: 0.5rem 0 0 0;
+    font-size: 0.9375rem;
+  }
+}
+
+.empty-icon {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--color-border);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.text-danger {
+  color: #8F2A21;
+}
+
+.text-warning {
+  color: #7A5200;
 }

@@ -1,6 +1,127 @@
-<div class="view-container">
-  <div class="view-header">
-    <h2>Panel de Inicio</h2>
-    <p>Bienvenido al sistema de pedidos e inventario de La Dorada S.A.S.</p>
+<div class="inicio-container">
+  <!-- Banner Institucional -->
+  <section class="hero-banner">
+    <div class="hero-content">
+      <div class="hero-badge">
+        <span class="sparkle-icon">✨</span> Calidad y Pureza Garantizada
+      </div>
+      <h2 class="hero-title">Todo limpio, todo en orden</h2>
+      <p class="hero-subtitle">
+        Sistema integral de control de pedidos, existencias y distribución de productos de aseo institucional y doméstico de La Dorada S.A.S.
+      </p>
+      <div class="hero-actions">
+        <a routerLink="/nuevo-pedido" class="btn btn--primary">
+          <span>+</span> Registrar Nuevo Pedido
+        </a>
+        <a routerLink="/catalogo" class="btn btn--secondary">
+          Consultar Catálogo
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Mensaje de error general si aplica -->
+  <div *ngIf="error" class="alert alert--error">
+    {{ error }}
   </div>
+
+  <!-- Métricas del Dashboard -->
+  <section class="metrics-grid">
+    <div class="metric-card metric-card--pendiente">
+      <div class="metric-icon">⏳</div>
+      <div class="metric-info">
+        <span class="metric-label">Pedidos Pendientes</span>
+        <span class="metric-value">{{ conteoPendientes }}</span>
+      </div>
+      <a routerLink="/pedidos" [queryParams]="{ estado: 'PENDIENTE' }" class="metric-link">Ver pendientes &rarr;</a>
+    </div>
+
+    <div class="metric-card metric-card--confirmado">
+      <div class="metric-icon">📦</div>
+      <div class="metric-info">
+        <span class="metric-label">Pedidos Confirmados</span>
+        <span class="metric-value">{{ conteoConfirmados }}</span>
+      </div>
+      <a routerLink="/pedidos" [queryParams]="{ estado: 'CONFIRMADO' }" class="metric-link">Listos para despachar &rarr;</a>
+    </div>
+
+    <div class="metric-card metric-card--despachado">
+      <div class="metric-icon">🚚</div>
+      <div class="metric-info">
+        <span class="metric-label">Pedidos Despachados</span>
+        <span class="metric-value">{{ conteoDespachados }}</span>
+      </div>
+      <a routerLink="/pedidos" [queryParams]="{ estado: 'DESPACHADO' }" class="metric-link">Ver historial &rarr;</a>
+    </div>
+
+    <div class="metric-card metric-card--alerta">
+      <div class="metric-icon">⚠️</div>
+      <div class="metric-info">
+        <span class="metric-label">Stock Bajo (&le; 10)</span>
+        <span class="metric-value">{{ productosStockBajo.length }}</span>
+      </div>
+      <a routerLink="/catalogo" class="metric-link">Revisar inventario &rarr;</a>
+    </div>
+  </section>
+
+  <!-- Sección de Alertas Destacadas de Stock Bajo -->
+  <section class="section-card">
+    <div class="section-header">
+      <div>
+        <h3 class="section-title">Alertas de Stock Bajo</h3>
+        <p class="section-subtitle">Productos activos con existencias iguales o inferiores al umbral crítico (10 unidades)</p>
+      </div>
+      <button class="btn btn--outline btn--sm" (click)="cargarDatosDashboard()">
+        Actualizar
+      </button>
+    </div>
+
+    <div *ngIf="cargando" class="loading-state">
+      <div class="spinner"></div>
+      <p>Consultando inventario en tiempo real...</p>
+    </div>
+
+    <div *ngIf="!cargando && productosStockBajo.length === 0" class="empty-state">
+      <div class="empty-icon">✅</div>
+      <h4>Inventario en niveles óptimos</h4>
+      <p>No hay productos activos con existencias bajas en este momento.</p>
+    </div>
+
+    <div *ngIf="!cargando && productosStockBajo.length > 0" class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Código</th>
+            <th>Producto</th>
+            <th>Precio Unitario</th>
+            <th>Existencias</th>
+            <th>Nivel Crítico</th>
+            <th>Acción</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let p of productosStockBajo">
+            <td><strong>{{ p.codigo }}</strong></td>
+            <td>{{ p.nombre }}</td>
+            <td>${{ p.precio | number:'1.2-2' }}</td>
+            <td>
+              <span [class.text-danger]="p.existencias === 0" [class.text-warning]="p.existencias > 0">
+                <strong>{{ p.existencias }}</strong> unidades
+              </span>
+            </td>
+            <td>
+              <span class="badge" [class.badge--error]="p.existencias === 0" [class.badge--warning]="p.existencias > 0">
+                {{ p.existencias === 0 ? 'AGOTADO' : 'STOCK BAJO' }}
+              </span>
+            </td>
+            <td>
+              <a routerLink="/catalogo" class="btn btn--secondary btn--sm">
+                Ajustar
+              </a>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
 </div>

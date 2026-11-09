@@ -1,6 +1,228 @@
-<div class="view-container">
+<div class="catalogo-container">
+  <!-- Encabezado de la Vista -->
   <div class="view-header">
-    <h2>Catálogo de Productos</h2>
-    <p>Consulta de productos de aseo y desinfección disponibles.</p>
+    <div>
+      <h2 class="view-title">Catálogo de Productos</h2>
+      <p class="view-subtitle">Gestión de productos de aseo, existencias y control de estado</p>
+    </div>
+    <button class="btn btn--primary" (click)="abrirModalCrear()">
+      <span>+</span> Registrar Nuevo Producto
+    </button>
+  </div>
+
+  <!-- Alertas de Éxito y Error -->
+  <div *ngIf="exitoMensaje" class="alert alert--success">
+    {{ exitoMensaje }}
+  </div>
+
+  <div *ngIf="errorMensaje" class="alert alert--error">
+    {{ errorMensaje }}
+  </div>
+
+  <!-- Barra de Filtros -->
+  <div class="filters-card card">
+    <div class="filter-row">
+      <div class="search-box">
+        <input
+          type="text"
+          class="form-control"
+          placeholder="Buscar por código o nombre..."
+          [(ngModel)]="filtroTexto"
+          (keyup.enter)="onBuscar()"
+        />
+        <button class="btn btn--secondary btn--sm" (click)="onBuscar()">
+          Buscar
+        </button>
+      </div>
+
+      <div class="status-filter">
+        <label for="filtroEstado" class="filter-label">Estado:</label>
+        <select
+          id="filtroEstado"
+          class="form-control"
+          (change)="onCambioFiltroActivo($any($event.target).value)"
+        >
+          <option value="todos">Todos los productos</option>
+          <option value="true">Solo Activos</option>
+          <option value="false">Solo Inactivos</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="cargando" class="loading-state">
+    <div class="spinner"></div>
+    <p>Cargando productos...</p>
+  </div>
+
+  <!-- Lista Vacía -->
+  <div *ngIf="!cargando && productos.length === 0" class="empty-state card">
+    <div class="empty-icon">📦</div>
+    <h3>No se encontraron productos</h3>
+    <p>Intenta modificar los términos de búsqueda o registra un nuevo producto en el catálogo.</p>
+  </div>
+
+  <!-- Tabla de Productos (Desktop) y Tarjetas (Mobile) -->
+  <div *ngIf="!cargando && productos.length > 0" class="table-responsive">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Código</th>
+          <th>Nombre</th>
+          <th>Precio (COP)</th>
+          <th>Existencias</th>
+          <th>Nivel Stock</th>
+          <th>Estado</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let p of productos">
+          <td><span class="product-code">{{ p.codigo }}</span></td>
+          <td>
+            <strong>{{ p.nombre }}</strong>
+          </td>
+          <td>${{ p.precio | number:'1.2-2' }}</td>
+          <td>
+            <span [class.text-danger]="p.existencias === 0" [class.text-warning]="p.stockBajo && p.existencias > 0">
+              {{ p.existencias }} u.
+            </span>
+          </td>
+          <td>
+            <span *ngIf="p.stockBajo" class="badge" [class.badge--error]="p.existencias === 0" [class.badge--warning]="p.existencias > 0">
+              {{ p.existencias === 0 ? 'AGOTADO' : 'STOCK BAJO' }}
+            </span>
+            <span *ngIf="!p.stockBajo" class="badge badge--despachado">
+              NORMAL
+            </span>
+          </td>
+          <td>
+            <span class="badge" [class.badge--active]="p.activo" [class.badge--inactive]="!p.activo">
+              {{ p.activo ? 'ACTIVO' : 'INACTIVO' }}
+            </span>
+          </td>
+          <td>
+            <div class="action-buttons">
+              <button class="btn btn--outline btn--sm" (click)="abrirModalEditar(p)" title="Editar producto">
+                Editar
+              </button>
+              <button
+                class="btn btn--sm"
+                [class.btn--danger]="p.activo"
+                [class.btn--secondary]="!p.activo"
+                (click)="toggleActivo(p)"
+                [title]="p.activo ? 'Desactivar producto' : 'Activar producto'"
+              >
+                {{ p.activo ? 'Desactivar' : 'Activar' }}
+              </button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Modal para Crear / Editar Producto -->
+  <div *ngIf="mostrarModal" class="modal-backdrop" (click)="cerrarModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3 class="modal-title">
+          {{ modoEdicion ? 'Editar Producto' : 'Registrar Nuevo Producto' }}
+        </h3>
+        <button class="close-btn" (click)="cerrarModal()" aria-label="Cerrar modal">&times;</button>
+      </div>
+
+      <div *ngIf="formError" class="alert alert--error">
+        {{ formError }}
+      </div>
+
+      <form (ngSubmit)="guardarProducto()" class="product-form">
+        <div class="form-group" *ngIf="!modoEdicion">
+          <label for="formCodigo">Código del Producto (Opcional):</label>
+          <input
+            type="text"
+            id="formCodigo"
+            class="form-control"
+            placeholder="Ej. ASE-015 (Vacío para autogenerar ASE-XXX)"
+            [(ngModel)]="formCodigo"
+            name="codigo"
+          />
+          <small class="form-hint">Si lo dejas en blanco, el sistema asignará el siguiente consecutivo automático.</small>
+        </div>
+
+        <div class="form-group" *ngIf="modoEdicion">
+          <label>Código:</label>
+          <input
+            type="text"
+            class="form-control"
+            [value]="formCodigo"
+            disabled
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="formNombre">Nombre del Producto <span class="required">*</span>:</label>
+          <input
+            type="text"
+            id="formNombre"
+            class="form-control"
+            placeholder="Ej. Limpiapisos Lavanda 3.8L"
+            [(ngModel)]="formNombre"
+            name="nombre"
+            required
+            maxlength="120"
+          />
+        </div>
+
+        <div class="form-row">
+          <div class="form-group col-half">
+            <label for="formPrecio">Precio (COP) <span class="required">*</span>:</label>
+            <input
+              type="number"
+              id="formPrecio"
+              class="form-control"
+              placeholder="0.00"
+              [(ngModel)]="formPrecio"
+              name="precio"
+              min="0.01"
+              step="100"
+              required
+            />
+          </div>
+
+          <div class="form-group col-half">
+            <label for="formExistencias">Existencias <span class="required">*</span>:</label>
+            <input
+              type="number"
+              id="formExistencias"
+              class="form-control"
+              placeholder="0"
+              [(ngModel)]="formExistencias"
+              name="existencias"
+              min="0"
+              step="1"
+              required
+            />
+          </div>
+        </div>
+
+        <div *ngIf="modoEdicion" class="edit-warning-box">
+          <span class="warning-icon">ℹ️</span>
+          <p>
+            Al modificar las existencias directamente en la edición, el sistema registrará automáticamente un movimiento de inventario de tipo <strong>AJUSTE</strong> con la diferencia.
+          </p>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn btn--outline" (click)="cerrarModal()" [disabled]="guardando">
+            Cancelar
+          </button>
+          <button type="submit" class="btn btn--primary" [disabled]="guardando">
+            {{ guardando ? 'Guardando...' : (modoEdicion ? 'Actualizar Producto' : 'Guardar Producto') }}
+          </button>
+        </div>
+      </form>
+    </div>
   </div>
 </div>

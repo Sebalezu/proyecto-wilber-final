@@ -1,6 +1,165 @@
-<div class="view-container">
+<div class="pedidos-container">
+  <!-- Encabezado de la Vista -->
   <div class="view-header">
-    <h2>Listado de Pedidos</h2>
-    <p>Historial y gestión de pedidos recibidos.</p>
+    <div>
+      <h2 class="view-title">Gestión de Pedidos</h2>
+      <p class="view-subtitle">Supervisión, filtrado y seguimiento del ciclo de vida de las órdenes de compra.</p>
+    </div>
+    <a routerLink="/nuevo-pedido" class="btn btn--primary">
+      <span>+</span> Registrar Nuevo Pedido
+    </a>
+  </div>
+
+  <!-- Alerta de Error si aplica -->
+  <div *ngIf="errorMensaje" class="alert alert--error">
+    {{ errorMensaje }}
+  </div>
+
+  <!-- Píldoras de Filtro por Estado -->
+  <div class="status-pills-bar">
+    <button
+      *ngFor="let est of estadosDisponibles"
+      type="button"
+      class="status-pill"
+      [class.active]="estadoSeleccionado === est.valor"
+      (click)="filtrarPorEstado(est.valor)"
+    >
+      {{ est.etiqueta }}
+    </button>
+  </div>
+
+  <!-- Filtros Secundarios: Cliente y Búsqueda -->
+  <div class="filters-card card">
+    <div class="filter-row">
+      <div class="search-box">
+        <input
+          type="text"
+          class="form-control"
+          placeholder="Buscar por cliente o ID de pedido..."
+          [(ngModel)]="filtroTextoCliente"
+        />
+      </div>
+
+      <div class="client-filter">
+        <label for="clienteFilter" class="filter-label">Filtrar por Cliente:</label>
+        <select
+          id="clienteFilter"
+          class="form-control"
+          [(ngModel)]="clienteSeleccionadoId"
+          (change)="onClienteChange()"
+        >
+          <option [ngValue]="null">Todos los clientes</option>
+          <option *ngFor="let c of clientes" [value]="c.id">
+            {{ c.nombre }}
+          </option>
+        </select>
+      </div>
+
+      <button
+        *ngIf="estadoSeleccionado !== 'TODOS' || clienteSeleccionadoId || filtroTextoCliente"
+        type="button"
+        class="btn btn--outline btn--sm"
+        (click)="limpiarFiltros()"
+      >
+        Limpiar Filtros
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="cargando" class="loading-state">
+    <div class="spinner"></div>
+    <p>Consultando pedidos...</p>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!cargando && pedidosFiltrados.length === 0" class="empty-state card">
+    <div class="empty-icon">📋</div>
+    <h3>No se encontraron pedidos</h3>
+    <p>No existen órdenes que coincidan con los filtros seleccionados.</p>
+    <button type="button" class="btn btn--secondary btn--sm mt-2" (click)="limpiarFiltros()">
+      Restablecer Filtros
+    </button>
+  </div>
+
+  <!-- Lista de Pedidos (Desktop: Tabla | Mobile: Tarjetas) -->
+  <div *ngIf="!cargando && pedidosFiltrados.length > 0">
+    <!-- Vista Tabla (Desktop) -->
+    <div class="table-responsive desktop-only">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Pedido #</th>
+            <th>Fecha</th>
+            <th>Cliente</th>
+            <th>Teléfono</th>
+            <th>Total (COP)</th>
+            <th>Estado</th>
+            <th>Acción</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let p of pedidosFiltrados" class="clickable-row" (click)="verDetalle(p.id)">
+            <td>
+              <span class="order-id">#{{ p.id }}</span>
+            </td>
+            <td>
+              {{ p.fecha | date:'dd/MM/yyyy HH:mm' }}
+            </td>
+            <td>
+              <strong>{{ p.cliente.nombre }}</strong>
+            </td>
+            <td>
+              {{ p.cliente.telefono || '—' }}
+            </td>
+            <td>
+              <span class="order-total">${{ p.total | number:'1.2-2' }}</span>
+            </td>
+            <td>
+              <span class="badge" [ngClass]="'badge--' + p.estado.toLowerCase()">
+                {{ p.estado }}
+              </span>
+            </td>
+            <td>
+              <button
+                type="button"
+                class="btn btn--outline btn--sm"
+                (click)="$event.stopPropagation(); verDetalle(p.id)"
+              >
+                Ver Detalle &rarr;
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Vista Tarjetas (Mobile) -->
+    <div class="mobile-only cards-list">
+      <div *ngFor="let p of pedidosFiltrados" class="card mobile-order-card" (click)="verDetalle(p.id)">
+        <div class="card-header-row">
+          <span class="order-id">Pedido #{{ p.id }}</span>
+          <span class="badge" [ngClass]="'badge--' + p.estado.toLowerCase()">
+            {{ p.estado }}
+          </span>
+        </div>
+
+        <div class="card-body">
+          <div class="order-client">
+            <strong>{{ p.cliente.nombre }}</strong>
+            <span *ngIf="p.cliente.telefono" class="client-tel">📞 {{ p.cliente.telefono }}</span>
+          </div>
+
+          <div class="card-footer-row">
+            <span class="order-date">{{ p.fecha | date:'dd/MM/yyyy HH:mm' }}</span>
+            <span class="order-total">${{ p.total | number:'1.2-2' }}</span>
+          </div>
+        </div>
+
+        <div class="card-action">
+          <span class="action-link">Ver detalle completo &rarr;</span>
+        </div>
+      </div>
+    </div>
   </div>
 </div>

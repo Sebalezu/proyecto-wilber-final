@@ -1,6 +1,233 @@
-<div class="view-container">
+<div class="nuevo-pedido-container">
+  <!-- Encabezado -->
   <div class="view-header">
-    <h2>Nuevo Pedido</h2>
-    <p>Formulario para registrar un pedido de clientes.</p>
+    <div>
+      <h2 class="view-title">Registrar Nuevo Pedido</h2>
+      <p class="view-subtitle">Selecciona el cliente, agrega los productos requeridos y elige si guardarlo como pendiente o confirmarlo de inmediato.</p>
+    </div>
+    <a routerLink="/pedidos" class="btn btn--outline">
+      &larr; Volver a Pedidos
+    </a>
+  </div>
+
+  <!-- Alerta de Error 409 / 400 -->
+  <div *ngIf="errorGeneral" class="alert alert--error error-banner">
+    <div class="error-header">
+      <span class="error-icon">⚠️</span>
+      <strong>{{ errorGeneral }}</strong>
+    </div>
+
+    <!-- Detalle de stock insuficiente si aplica -->
+    <div *ngIf="detallesStock && detallesStock.length > 0" class="stock-details-list">
+      <p class="stock-details-title">Detalle de productos sin existencias suficientes:</p>
+      <ul>
+        <li *ngFor="let d of detallesStock">
+          <strong>{{ d.nombre }}</strong>: pediste <strong>{{ d.solicitado }}</strong> unidades y solo hay <strong>{{ d.disponible }}</strong> disponibles.
+        </li>
+      </ul>
+      <p class="stock-hint">
+        Sugerencia: Reduce las cantidades solicitadas o guarda el pedido como <strong>PENDIENTE</strong> para no descontar inventario en este momento.
+      </p>
+    </div>
+  </div>
+
+  <!-- Estado de Carga Inicial -->
+  <div *ngIf="cargandoInicial" class="loading-state card">
+    <div class="spinner"></div>
+    <p>Cargando catálogo y clientes...</p>
+  </div>
+
+  <div *ngIf="!cargandoInicial" class="order-grid">
+    <!-- Columna Principal: Formulario -->
+    <div class="form-column">
+      <!-- Tarjeta 1: Cliente -->
+      <section class="card form-section">
+        <div class="section-title-row">
+          <h3 class="section-title">1. Cliente</h3>
+          <button type="button" class="btn btn--secondary btn--sm" (click)="abrirModalCliente()">
+            + Nuevo Cliente
+          </button>
+        </div>
+
+        <div class="form-group">
+          <label for="clienteSelect">Seleccionar Cliente <span class="required">*</span>:</label>
+          <select
+            id="clienteSelect"
+            class="form-control"
+            [(ngModel)]="clienteSeleccionadoId"
+            name="cliente"
+          >
+            <option [ngValue]="null" disabled>-- Selecciona un cliente --</option>
+            <option *ngFor="let c of clientes" [value]="c.id">
+              {{ c.nombre }} (Tel: {{ c.telefono || 'Sin teléfono' }})
+            </option>
+          </select>
+        </div>
+      </section>
+
+      <!-- Tarjeta 2: Líneas de Pedido -->
+      <section class="card form-section">
+        <div class="section-title-row">
+          <h3 class="section-title">2. Productos y Cantidades</h3>
+          <button type="button" class="btn btn--secondary btn--sm" (click)="agregarLinea()">
+            + Agregar Línea
+          </button>
+        </div>
+
+        <div class="lines-container">
+          <div *ngFor="let linea of lineas; let i = index" class="line-row">
+            <div class="line-product">
+              <label class="line-label">Producto #{{ i + 1 }}:</label>
+              <select
+                class="form-control"
+                [(ngModel)]="linea.productoId"
+                (change)="onProductoChange(linea)"
+              >
+                <option [ngValue]="null" disabled>-- Selecciona producto --</option>
+                <option *ngFor="let p of productos" [value]="p.id">
+                  {{ p.codigo }} - {{ p.nombre }} (Stock: {{ p.existencias }}) - ${{ p.precio | number:'1.2-2' }}
+                </option>
+              </select>
+            </div>
+
+            <div class="line-quantity">
+              <label class="line-label">Cantidad:</label>
+              <input
+                type="number"
+                class="form-control"
+                [(ngModel)]="linea.cantidad"
+                min="1"
+                step="1"
+                placeholder="1"
+              />
+            </div>
+
+            <div class="line-price">
+              <span class="line-label">P. Unitario:</span>
+              <span class="price-value">${{ linea.precioUnitario | number:'1.2-2' }}</span>
+            </div>
+
+            <div class="line-subtotal">
+              <span class="line-label">Subtotal:</span>
+              <span class="subtotal-value">${{ calcularSubtotal(linea) | number:'1.2-2' }}</span>
+            </div>
+
+            <div class="line-actions">
+              <button
+                type="button"
+                class="btn btn--danger btn--sm"
+                (click)="quitarLinea(i)"
+                [disabled]="lineas.length <= 1"
+                title="Quitar línea"
+              >
+                &times;
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <button type="button" class="btn btn--outline btn--sm mt-2" (click)="agregarLinea()">
+          + Agregar otro producto
+        </button>
+      </section>
+    </div>
+
+    <!-- Columna Lateral: Resumen del Pedido y Acciones -->
+    <div class="summary-column">
+      <div class="card summary-card">
+        <h3 class="summary-title">Resumen del Pedido</h3>
+
+        <div class="summary-item">
+          <span class="summary-label">Líneas de producto:</span>
+          <span class="summary-value">{{ lineas.length }}</span>
+        </div>
+
+        <div class="summary-divider"></div>
+
+        <div class="summary-total-box">
+          <span class="total-label">Total Estimado</span>
+          <span class="total-amount">${{ calcularTotalPreview() | number:'1.2-2' }} COP</span>
+          <small class="total-note">* El total definitivo y los subtotales son calculados por el servidor con precios vigentes.</small>
+        </div>
+
+        <div class="action-buttons-stack">
+          <!-- Botón a: Guardar como Pendiente -->
+          <button
+            type="button"
+            class="btn btn--secondary btn--block"
+            (click)="guardarPedido(false)"
+            [disabled]="enviando"
+          >
+            {{ enviando ? 'Procesando...' : 'Guardar como pendiente' }}
+          </button>
+
+          <!-- Botón b: Confirmar Pedido de Inmediato -->
+          <button
+            type="button"
+            class="btn btn--primary btn--block"
+            (click)="guardarPedido(true)"
+            [disabled]="enviando"
+          >
+            {{ enviando ? 'Procesando...' : 'Confirmar pedido' }}
+          </button>
+        </div>
+
+        <div class="info-help-box">
+          <p>
+            <strong>Nota:</strong> Al presionar <em>Confirmar pedido</em>, el backend verificará existencias y descontará el inventario inmediatamente.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para Agregar Cliente Rápido -->
+  <div *ngIf="mostrarModalCliente" class="modal-backdrop" (click)="cerrarModalCliente()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3 class="modal-title">Registrar Nuevo Cliente</h3>
+        <button class="close-btn" (click)="cerrarModalCliente()">&times;</button>
+      </div>
+
+      <div *ngIf="errorClienteModal" class="alert alert--error">
+        {{ errorClienteModal }}
+      </div>
+
+      <form (ngSubmit)="guardarNuevoCliente()">
+        <div class="form-group">
+          <label for="nuevoNombre">Nombre del Cliente / Empresa <span class="required">*</span>:</label>
+          <input
+            type="text"
+            id="nuevoNombre"
+            class="form-control"
+            [(ngModel)]="nuevoClienteNombre"
+            name="nombreCliente"
+            placeholder="Ej. Comercializadora Andina S.A.S."
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="nuevoTelefono">Teléfono de Contacto:</label>
+          <input
+            type="text"
+            id="nuevoTelefono"
+            class="form-control"
+            [(ngModel)]="nuevoClienteTelefono"
+            name="telefonoCliente"
+            placeholder="Ej. 3101234567"
+          />
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn btn--outline" (click)="cerrarModalCliente()" [disabled]="guardandoCliente">
+            Cancelar
+          </button>
+          <button type="submit" class="btn btn--primary" [disabled]="guardandoCliente">
+            {{ guardandoCliente ? 'Guardando...' : 'Crear y Seleccionar' }}
+          </button>
+        </div>
+      </form>
+    </div>
   </div>
 </div>
