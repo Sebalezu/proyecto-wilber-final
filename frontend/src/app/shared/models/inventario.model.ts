@@ -8,3 +8,4 @@ export interface MovimientoInventario {
   cantidad: number;
   fecha: string;
 }
+

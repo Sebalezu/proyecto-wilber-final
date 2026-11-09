@@ -64,3 +64,4 @@ export class CatalogoService {
     return this.http.post<Cliente>(`${this.baseUrl}/clientes`, request);
   }
 }
+

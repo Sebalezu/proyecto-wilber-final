@@ -45,3 +45,4 @@ export class PedidosService {
     return this.http.patch<PedidoDetalle>(`${this.baseUrl}/pedidos/${id}/estado`, request);
   }
 }
+

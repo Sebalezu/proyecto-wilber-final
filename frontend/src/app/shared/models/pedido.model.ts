@@ -55,3 +55,4 @@ export interface ActualizarPedidoRequest {
 export interface CambiarEstadoPedidoRequest {
   estado: EstadoPedido;
 }
+

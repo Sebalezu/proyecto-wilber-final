@@ -25,3 +25,4 @@ export interface ProductoUpdateRequest {
 export interface ProductoActivoRequest {
   activo: boolean;
 }
+

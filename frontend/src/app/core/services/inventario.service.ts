@@ -29,3 +29,4 @@ export class InventarioService {
     return this.http.get<MovimientoInventario[]>(`${this.baseUrl}/inventario/movimientos`, { params });
   }
 }
+

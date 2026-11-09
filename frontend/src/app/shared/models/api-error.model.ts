@@ -19,3 +19,4 @@ export interface ApiErrorResponse {
   errors?: ErrorCampo[];
   detallesStock?: DetalleStock[];
 }
+
