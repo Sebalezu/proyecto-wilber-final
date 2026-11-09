@@ -2,6 +2,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CatalogoService } from '../../core/services/catalogo.service';
+import { InventarioService } from '../../core/services/inventario.service';
 import { AuthService } from '../../core/services/auth.service';
 import { Producto, ProductoRequest, ProductoUpdateRequest } from '../../shared/models';
 
@@ -14,10 +15,19 @@ import { Producto, ProductoRequest, ProductoUpdateRequest } from '../../shared/m
 })
 export class CatalogoComponent implements OnInit {
   private readonly catalogoService = inject(CatalogoService);
+  private readonly inventarioService = inject(InventarioService);
   private readonly authService = inject(AuthService);
 
   esAdmin(): boolean {
     return this.authService.hasRole(['ADMINISTRADOR']);
+  }
+
+  puedeAjustarStock(): boolean {
+    return this.authService.hasRole(['ADMINISTRADOR', 'BODEGA']);
+  }
+
+  tienePermisosAcciones(): boolean {
+    return this.esAdmin() || this.puedeAjustarStock();
   }
 
   productos: Producto[] = [];
@@ -41,6 +51,14 @@ export class CatalogoComponent implements OnInit {
   formExistencias: number | null = null;
   formError: string | null = null;
   guardando = false;
+
+  // Modal para Ajuste de Stock / Ingreso de Mercancía (Bodega y Admin)
+  mostrarModalAjuste = false;
+  productoAjuste: Producto | null = null;
+  cantidadAjuste = 1;
+  motivoAjuste = 'Ingreso a bodega / Ajuste físico';
+  guardandoAjuste = false;
+  errorAjuste: string | null = null;
 
   ngOnInit(): void {
     this.cargarProductos();
@@ -181,6 +199,53 @@ export class CatalogoComponent implements OnInit {
       error: (err) => {
         console.error(`Error al ${accion} producto:`, err);
         this.errorMensaje = `No se pudo ${accion} el producto.`;
+      }
+    });
+  }
+
+  // Métodos para Ajuste de Stock
+  abrirModalAjuste(p: Producto): void {
+    this.productoAjuste = p;
+    this.cantidadAjuste = 1;
+    this.motivoAjuste = 'Ingreso a bodega / Ajuste físico';
+    this.errorAjuste = null;
+    this.mostrarModalAjuste = true;
+  }
+
+  cerrarModalAjuste(): void {
+    this.mostrarModalAjuste = false;
+    this.productoAjuste = null;
+    this.errorAjuste = null;
+  }
+
+  confirmarAjuste(): void {
+    if (!this.productoAjuste) return;
+    if (!this.cantidadAjuste || this.cantidadAjuste <= 0) {
+      this.errorAjuste = 'La cantidad a ingresar debe ser un número entero mayor a cero.';
+      return;
+    }
+
+    this.guardandoAjuste = true;
+    this.errorAjuste = null;
+
+    this.inventarioService.ajustarStock({
+      productoId: this.productoAjuste.id,
+      cantidad: Math.floor(this.cantidadAjuste),
+      motivo: this.motivoAjuste.trim()
+    }).subscribe({
+      next: (productoActualizado) => {
+        this.guardandoAjuste = false;
+        const idx = this.productos.findIndex(p => p.id === productoActualizado.id);
+        if (idx !== -1) {
+          this.productos[idx] = productoActualizado;
+        }
+        this.mostrarMensajeExito(`Stock actualizado: se sumaron ${this.cantidadAjuste} unidades a "${productoActualizado.nombre}". Nuevas existencias: ${productoActualizado.existencias} u.`);
+        this.cerrarModalAjuste();
+      },
+      error: (err) => {
+        this.guardandoAjuste = false;
+        console.error('Error al registrar ajuste de inventario:', err);
+        this.errorAjuste = err?.error?.message || 'Error al registrar el ajuste de inventario.';
       }
     });
   }

@@ -96,3 +96,4 @@ class AuthServiceTest {
         assertEquals("vendedor@ladorada.com", lista.get(1).email());
     }
 }
+

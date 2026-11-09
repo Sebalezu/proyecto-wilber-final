@@ -1,7 +1,9 @@
 package com.ladorada.sistema.inventario.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ladorada.sistema.catalogo.dto.ProductoResponse;
 import com.ladorada.sistema.common.exception.GlobalExceptionHandler;
+import com.ladorada.sistema.inventario.dto.AjusteInventarioRequest;
 import com.ladorada.sistema.inventario.dto.MovimientoResponse;
 import com.ladorada.sistema.inventario.model.TipoMovimiento;
 import com.ladorada.sistema.inventario.service.InventarioService;
@@ -10,14 +12,17 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -27,6 +32,9 @@ class InventarioControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     @MockBean
     private InventarioService inventarioService;
@@ -54,5 +62,21 @@ class InventarioControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].codigo").value("CLO-002"))
                 .andExpect(jsonPath("$[0].stockBajo").value(true));
+    }
+
+    @Test
+    void ajustarStock_retorna200YProductoActualizado() throws Exception {
+        ProductoResponse response = new ProductoResponse(1L, "DET-001", "Detergente 5L", new BigDecimal("38500.00"), 25, true, false, LocalDateTime.now());
+        when(inventarioService.ajustarStock(any(AjusteInventarioRequest.class))).thenReturn(response);
+
+        AjusteInventarioRequest request = new AjusteInventarioRequest(1L, 10, "Ingreso a bodega / Ajuste físico");
+
+        mockMvc.perform(post("/api/inventario/ajuste")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1))
+                .andExpect(jsonPath("$.existencias").value(25))
+                .andExpect(jsonPath("$.codigo").value("DET-001"));
     }
 }

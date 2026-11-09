@@ -6,6 +6,7 @@ import com.ladorada.sistema.catalogo.repository.ProductoRepository;
 import com.ladorada.sistema.common.exception.DetalleStockInsuficiente;
 import com.ladorada.sistema.common.exception.RecursoNoEncontradoException;
 import com.ladorada.sistema.common.exception.StockInsuficienteException;
+import com.ladorada.sistema.inventario.dto.AjusteInventarioRequest;
 import com.ladorada.sistema.inventario.dto.MovimientoResponse;
 import com.ladorada.sistema.inventario.model.MovimientoInventario;
 import com.ladorada.sistema.inventario.model.TipoMovimiento;
@@ -166,6 +167,33 @@ public class InventarioService {
         return productos.stream()
                 .map(p -> ProductoResponse.fromEntity(p, umbralStockBajo))
                 .toList();
+    }
+
+    public ProductoResponse ajustarStock(AjusteInventarioRequest request) {
+        if (request.productoId() == null) {
+            throw new IllegalArgumentException("El ID del producto es obligatorio");
+        }
+        if (request.cantidad() == null || request.cantidad() <= 0) {
+            throw new IllegalArgumentException("La cantidad debe ser mayor a cero");
+        }
+
+        Producto producto = productoRepository.findByIdConBloqueo(request.productoId())
+                .orElseThrow(() -> new RecursoNoEncontradoException("Producto", request.productoId()));
+
+        int nuevoStock = producto.getExistencias() + request.cantidad();
+        producto.setExistencias(nuevoStock);
+        Producto guardado = productoRepository.save(producto);
+
+        MovimientoInventario movimiento = new MovimientoInventario(
+                producto.getId(),
+                null,
+                TipoMovimiento.AJUSTE,
+                request.cantidad(),
+                LocalDateTime.now()
+        );
+        movimientoInventarioRepository.save(movimiento);
+
+        return ProductoResponse.fromEntity(guardado, umbralStockBajo);
     }
 
     public int getUmbralStockBajo() {

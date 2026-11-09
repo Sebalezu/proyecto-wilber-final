@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { MovimientoInventario, Producto, TipoMovimiento } from '../../shared/models';
+import { AjusteInventarioRequest, MovimientoInventario, Producto, TipoMovimiento } from '../../shared/models';
 
 @Injectable({
   providedIn: 'root'
@@ -10,6 +10,10 @@ import { MovimientoInventario, Producto, TipoMovimiento } from '../../shared/mod
 export class InventarioService {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = environment.apiUrl;
+
+  ajustarStock(request: AjusteInventarioRequest): Observable<Producto> {
+    return this.http.post<Producto>(`${this.baseUrl}/inventario/ajuste`, request);
+  }
 
   getStockBajo(): Observable<Producto[]> {
     return this.http.get<Producto[]>(`${this.baseUrl}/inventario/stock-bajo`);

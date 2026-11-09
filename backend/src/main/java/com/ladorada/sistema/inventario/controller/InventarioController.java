@@ -1,13 +1,17 @@
 package com.ladorada.sistema.inventario.controller;
 
 import com.ladorada.sistema.catalogo.dto.ProductoResponse;
+import com.ladorada.sistema.inventario.dto.AjusteInventarioRequest;
 import com.ladorada.sistema.inventario.dto.MovimientoResponse;
 import com.ladorada.sistema.inventario.model.TipoMovimiento;
 import com.ladorada.sistema.inventario.service.InventarioService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -39,5 +43,11 @@ public class InventarioController {
     @Operation(summary = "Listar productos con stock bajo", description = "Retorna los productos activos cuyas existencias sean menores o iguales al umbral configurado (incluye los agotados).")
     public ResponseEntity<List<ProductoResponse>> listarStockBajo() {
         return ResponseEntity.ok(inventarioService.listarStockBajo());
+    }
+
+    @PostMapping("/ajuste")
+    @Operation(summary = "Registrar ajuste de existencias (ingreso de mercancía)", description = "Incrementa las existencias de un producto y registra un movimiento de auditoría de tipo AJUSTE.")
+    public ResponseEntity<ProductoResponse> ajustarStock(@Valid @RequestBody AjusteInventarioRequest request) {
+        return ResponseEntity.ok(inventarioService.ajustarStock(request));
     }
 }

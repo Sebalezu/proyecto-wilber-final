@@ -32,3 +32,4 @@ export const roleGuard: CanActivateFn = (route, state) => {
   router.navigate(['/inicio']);
   return false;
 };
+

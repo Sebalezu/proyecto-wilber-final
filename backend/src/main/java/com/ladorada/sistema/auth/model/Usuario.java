@@ -106,3 +106,4 @@ public class Usuario {
         this.createdAt = createdAt;
     }
 }
+

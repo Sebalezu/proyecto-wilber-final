@@ -45,7 +45,7 @@ export class PedidoDetalleComponent implements OnInit {
   }
 
   puedeCancelarConfirmado(): boolean {
-    return this.authService.hasRole(['ADMINISTRADOR']);
+    return this.authService.hasRole(['ADMINISTRADOR', 'BODEGA']);
   }
 
   pedidoId: number | null = null;
@@ -139,14 +139,18 @@ export class PedidoDetalleComponent implements OnInit {
   }
 
   solicitarCancelar(): void {
-    const advertencia = this.pedido?.estado === 'CONFIRMADO'
+    const esConfirmado = this.pedido?.estado === 'CONFIRMADO';
+    const mensaje = esConfirmado
+      ? '¿Desea cancelar el pedido? El inventario reservado será restituido a bodega automáticamente.'
+      : '¿Está seguro de que desea cancelar este pedido?';
+    const advertencia = esConfirmado
       ? 'Atención: Al cancelar este pedido, los productos descontados serán RESTITUIDOS automáticamente al inventario general.'
       : 'El pedido pasará a estado cancelado y no generará movimientos de inventario.';
 
     this.abrirModalTransicion(
       'CANCELADO',
-      'Cancelar Pedido',
-      '¿Está seguro de que desea cancelar este pedido?',
+      esConfirmado ? 'Cancelar Envío / Pedido' : 'Cancelar Pedido',
+      mensaje,
       advertencia,
       'btn--danger'
     );

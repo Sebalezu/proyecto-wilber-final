@@ -6,3 +6,4 @@ public class CredencialesInvalidasException extends RuntimeException {
         super(message);
     }
 }
+

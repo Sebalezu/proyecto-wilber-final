@@ -9,3 +9,9 @@ export interface MovimientoInventario {
   fecha: string;
 }
 
+export interface AjusteInventarioRequest {
+  productoId: number;
+  cantidad: number;
+  motivo?: string;
+}
+

@@ -90,3 +90,4 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$[1].email").value("ventas@ladorada.com"));
     }
 }
+

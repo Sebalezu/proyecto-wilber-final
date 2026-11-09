@@ -1,9 +1,11 @@
 package com.ladorada.sistema.inventario.service;
 
+import com.ladorada.sistema.catalogo.dto.ProductoResponse;
 import com.ladorada.sistema.catalogo.model.Producto;
 import com.ladorada.sistema.catalogo.repository.ProductoRepository;
 import com.ladorada.sistema.common.exception.RecursoNoEncontradoException;
 import com.ladorada.sistema.common.exception.StockInsuficienteException;
+import com.ladorada.sistema.inventario.dto.AjusteInventarioRequest;
 import com.ladorada.sistema.inventario.model.MovimientoInventario;
 import com.ladorada.sistema.inventario.model.TipoMovimiento;
 import com.ladorada.sistema.inventario.repository.MovimientoInventarioRepository;
@@ -275,5 +277,26 @@ class InventarioServiceTest {
         assertEquals(5, mov.getCantidad()); // Cantidad consolidada
         assertEquals(1L, mov.getProductoId());
         assertEquals(500L, mov.getPedidoId());
+    }
+
+    @Test
+    @DisplayName("ajustarStock incrementa existencias y registra movimiento tipo AJUSTE")
+    void ajustarStock_exitoso_incrementaStockYRegistraAjuste() {
+        when(productoRepository.findByIdConBloqueo(1L)).thenReturn(Optional.of(productoCloro)); // existencias: 8
+        when(productoRepository.save(any(Producto.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        AjusteInventarioRequest request = new AjusteInventarioRequest(1L, 15, "Ingreso a bodega / Ajuste físico");
+        ProductoResponse response = inventarioService.ajustarStock(request);
+
+        assertEquals(23, response.existencias()); // 8 + 15 = 23
+        assertEquals(23, productoCloro.getExistencias());
+        verify(productoRepository).save(productoCloro);
+
+        ArgumentCaptor<MovimientoInventario> captor = ArgumentCaptor.forClass(MovimientoInventario.class);
+        verify(movimientoInventarioRepository).save(captor.capture());
+        MovimientoInventario mov = captor.getValue();
+        assertEquals(TipoMovimiento.AJUSTE, mov.getTipo());
+        assertEquals(15, mov.getCantidad());
+        assertEquals(1L, mov.getProductoId());
     }
 }
