@@ -114,6 +114,20 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
     }
 
+    @ExceptionHandler({
+            TransicionNoPermitidaException.class,
+            PedidoNoEditableException.class
+    })
+    public ResponseEntity<ErrorRespuesta> handleConflictosPedido(RuntimeException ex, HttpServletRequest request) {
+        ErrorRespuesta error = new ErrorRespuesta(
+                HttpStatus.CONFLICT.value(),
+                HttpStatus.CONFLICT.getReasonPhrase(),
+                ex.getMessage(),
+                request.getRequestURI()
+        );
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+    }
+
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ErrorRespuesta> handleDataIntegrity(DataIntegrityViolationException ex, HttpServletRequest request) {
         log.warn("Violación de integridad de datos: {}", ex.getMessage());

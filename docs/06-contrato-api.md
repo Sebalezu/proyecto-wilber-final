@@ -323,3 +323,235 @@ public class InventarioService {
    - Si se expone vía REST en el controlador de pedidos, el `GlobalExceptionHandler` ya existente devolverá automáticamente un `HTTP 409 Conflict` con la propiedad `detallesStock`.
 6. **Restitución:**  
    Suma las cantidades de vuelta al stock y registra automáticamente los movimientos de tipo `RESTITUCION`.
+
+---
+
+## 7. Módulo de Pedidos (`/api/pedidos`)
+
+El módulo de pedidos gestiona el ciclo completo de vida de las órdenes de compra de los clientes, calculando totales en el servidor, validando existencias contra inventario con bloqueo pesimista y registrando el historial cronológico de cambios de estado.
+
+### 7.1 Matriz de Estados y Transiciones Permitidas
+
+| Estado Actual | Transiciones Válidas | Efecto en Inventario / Reglas |
+| :--- | :--- | :--- |
+| **`PENDIENTE`** | `CONFIRMADO`, `RECHAZADO`, `CANCELADO` | Estado inicial. Si pasa a `CONFIRMADO`, valida y descuenta existencias mediante `inventarioService.descontar`. Si pasa a `RECHAZADO` o `CANCELADO`, no afecta inventario. Es el único estado editable vía `PUT`. |
+| **`CONFIRMADO`** | `DESPACHADO`, `CANCELADO` | Existencias ya descontadas (`stockDescontado = true`). Si pasa a `CANCELADO`, restituye existencias mediante `inventarioService.restituir` y `stockDescontado` pasa a `false`. |
+| **`DESPACHADO`** | *(Ninguna - Estado Final)* | Entrega confirmada al cliente. No permite transiciones. |
+| **`RECHAZADO`** | *(Ninguna - Estado Final)* | Pedido rechazado. No permite transiciones. |
+| **`CANCELADO`** | *(Ninguna - Estado Final)* | Pedido anulado. No permite transiciones. |
+
+> Cualquier intento de transición no permitida (por ejemplo `DESPACHADO → PENDIENTE` o `CANCELADO → CONFIRMADO`) responderá inmediatamente con `HTTP 409 Conflict`.
+
+---
+
+### 7.2 Endpoints REST de Pedidos
+
+#### 7.2.1 Crear Pedido
+- **Método y Ruta:** `POST /api/pedidos`
+- **Descripción:** Registra un nuevo pedido. Si `confirmar: true`, el pedido nace directamente en `CONFIRMADO` y descuenta inventario de inmediato (con rollback transaccional completo si no hay existencias). Si se omiten o repiten productos, las líneas se consolidan sumando sus cantidades. El total se calcula en el servidor.
+- **Códigos de Respuesta:**
+  - `201 Created`: Pedido creado exitosamente.
+  - `400 Bad Request`: `clienteId` ausente, lista de líneas vacía, o `cantidad <= 0` ("La cantidad debe ser un número entero mayor que cero.").
+  - `404 Not Found`: Cliente o producto no existe.
+  - `409 Conflict`: Si `confirmar: true` y no hay existencias suficientes de uno o más productos.
+- **Ejemplo Request (`POST /api/pedidos`):**
+```json
+{
+  "clienteId": 1,
+  "confirmar": false,
+  "lineas": [
+    {
+      "productoId": 1,
+      "cantidad": 5
+    },
+    {
+      "productoId": 2,
+      "cantidad": 3
+    }
+  ]
+}
+```
+- **Ejemplo Response (`201 Created`):**
+```json
+{
+  "id": 101,
+  "cliente": {
+    "id": 1,
+    "nombre": "Distribuidora La 14",
+    "telefono": "3001234567"
+  },
+  "lineas": [
+    {
+      "id": 201,
+      "productoId": 1,
+      "productoNombre": "Detergente Líquido Industrial 5L",
+      "productoCodigo": "DET-001",
+      "cantidad": 5,
+      "precioUnitario": 38500.00,
+      "subtotal": 192500.00
+    },
+    {
+      "id": 202,
+      "productoId": 2,
+      "productoNombre": "Cloro Blanqueador Desinfectante 3.8L",
+      "productoCodigo": "CLO-002",
+      "cantidad": 3,
+      "precioUnitario": 16800.00,
+      "subtotal": 50400.00
+    }
+  ],
+  "total": 242900.00,
+  "estado": "PENDIENTE",
+  "stockDescontado": false,
+  "fecha": "2026-11-08T17:30:00",
+  "historial": [
+    {
+      "id": 301,
+      "estadoAnterior": null,
+      "estadoNuevo": "PENDIENTE",
+      "fecha": "2026-11-08T17:30:00"
+    }
+  ]
+}
+```
+
+---
+
+#### 7.2.2 Listar Pedidos
+- **Método y Ruta:** `GET /api/pedidos`
+- **Parámetros Query (opcionales):**
+  - `estado` (string): `PENDIENTE`, `CONFIRMADO`, `DESPACHADO`, `RECHAZADO`, `CANCELADO`.
+  - `clienteId` (Long): Filtra los pedidos pertenecientes a un cliente específico.
+- **Códigos de Respuesta:** `200 OK`
+- **Ejemplo Response (`200 OK`):**
+```json
+[
+  {
+    "id": 101,
+    "cliente": {
+      "id": 1,
+      "nombre": "Distribuidora La 14",
+      "telefono": "3001234567"
+    },
+    "total": 242900.00,
+    "estado": "PENDIENTE",
+    "stockDescontado": false,
+    "fecha": "2026-11-08T17:30:00"
+  }
+]
+```
+
+---
+
+#### 7.2.3 Obtener Detalle de Pedido por ID
+- **Método y Ruta:** `GET /api/pedidos/{id}`
+- **Descripción:** Retorna la información completa de la orden: cliente, líneas con sus precios unitarios y subtotales, total recalculado, y el historial de cambios de estado ordenado cronológicamente.
+- **Códigos de Respuesta:** `200 OK`, `404 Not Found`
+- **Ejemplo Response (`200 OK`):**
+```json
+{
+  "id": 101,
+  "cliente": {
+    "id": 1,
+    "nombre": "Distribuidora La 14",
+    "telefono": "3001234567"
+  },
+  "lineas": [
+    {
+      "id": 201,
+      "productoId": 1,
+      "productoNombre": "Detergente Líquido Industrial 5L",
+      "productoCodigo": "DET-001",
+      "cantidad": 5,
+      "precioUnitario": 38500.00,
+      "subtotal": 192500.00
+    }
+  ],
+  "total": 192500.00,
+  "estado": "CONFIRMADO",
+  "stockDescontado": true,
+  "fecha": "2026-11-08T17:30:00",
+  "historial": [
+    {
+      "id": 301,
+      "estadoAnterior": null,
+      "estadoNuevo": "PENDIENTE",
+      "fecha": "2026-11-08T17:30:00"
+    },
+    {
+      "id": 302,
+      "estadoAnterior": "PENDIENTE",
+      "estadoNuevo": "CONFIRMADO",
+      "fecha": "2026-11-08T17:35:00"
+    }
+  ]
+}
+```
+
+---
+
+#### 7.2.4 Actualizar Líneas de Pedido
+- **Método y Ruta:** `PUT /api/pedidos/{id}`
+- **Descripción:** Reemplaza las líneas del pedido y recalcula el total según los precios vigentes. **Solo se permite si el pedido está en estado `PENDIENTE`**.
+- **Códigos de Respuesta:**
+  - `200 OK`: Pedido actualizado exitosamente.
+  - `400 Bad Request`: Líneas vacías o cantidad `<= 0`.
+  - `404 Not Found`: Pedido o producto no encontrado.
+  - `409 Conflict`: Si el estado del pedido es diferente a `PENDIENTE` (mensaje: `"Solo se pueden editar pedidos en estado PENDIENTE (estado actual: CONFIRMADO)"`).
+- **Ejemplo Request (`PUT /api/pedidos/101`):**
+```json
+{
+  "lineas": [
+    {
+      "productoId": 1,
+      "cantidad": 8
+    }
+  ]
+}
+```
+
+---
+
+#### 7.2.5 Cambiar Estado del Pedido
+- **Método y Ruta:** `PATCH /api/pedidos/{id}/estado`
+- **Descripción:** Aplica una transición de estado validada contra la matriz permitida, ejecutando concurrentemente el bloqueo pesimista y los efectos sobre inventario e historial.
+- **Códigos de Respuesta:**
+  - `200 OK`: Transición completada con éxito.
+  - `400 Bad Request`: Estado inválido o ausente.
+  - `404 Not Found`: Pedido no existe.
+  - `409 Conflict`: Transición prohibida o stock insuficiente para confirmar.
+- **Ejemplo Request (`PATCH /api/pedidos/101/estado`):**
+```json
+{
+  "estado": "CONFIRMADO"
+}
+```
+- **Ejemplo de Error por Transición Prohibida (`409 Conflict`):**
+```json
+{
+  "timestamp": "2026-11-08T17:40:00",
+  "status": 409,
+  "error": "Conflict",
+  "message": "Transición no permitida: DESPACHADO → PENDIENTE",
+  "path": "/api/pedidos/101/estado"
+}
+```
+- **Ejemplo de Error por Stock Insuficiente (`409 Conflict`):**
+```json
+{
+  "timestamp": "2026-11-08T17:40:00",
+  "status": 409,
+  "error": "Conflict",
+  "message": "Detergente Líquido Industrial 5L: pediste 150 y hay 120 disponibles",
+  "path": "/api/pedidos/101/estado",
+  "detallesStock": [
+    {
+      "productoId": 1,
+      "nombre": "Detergente Líquido Industrial 5L",
+      "solicitado": 150,
+      "disponible": 120
+    }
+  ]
+}
+```
+
