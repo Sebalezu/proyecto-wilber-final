@@ -10,7 +10,7 @@
         Sistema integral de control de pedidos, existencias y distribución de productos de aseo institucional y doméstico de La Dorada S.A.S.
       </p>
       <div class="hero-actions">
-        <a routerLink="/nuevo-pedido" class="btn btn--primary">
+        <a *ngIf="puedeCrearPedido()" routerLink="/nuevo-pedido" class="btn btn--primary">
           <span>+</span> Registrar Nuevo Pedido
         </a>
         <a routerLink="/catalogo" class="btn btn--secondary">

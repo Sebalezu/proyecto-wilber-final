@@ -16,26 +16,50 @@
         </a>
       </div>
 
-      <button class="menu-toggle" (click)="toggleMenu()" aria-label="Abrir menú de navegación">
-        <span class="menu-icon" [class.open]="isMobileMenuOpen"></span>
-      </button>
+      <ng-container *ngIf="(usuarioActual$ | async) as usuario">
+        <button class="menu-toggle" (click)="toggleMenu()" aria-label="Abrir menú de navegación">
+          <span class="menu-icon" [class.open]="isMobileMenuOpen"></span>
+        </button>
 
-      <nav class="nav-menu" [class.active]="isMobileMenuOpen">
-        <ul class="nav-list">
-          <li class="nav-item">
-            <a routerLink="/inicio" routerLinkActive="active" (click)="closeMenu()" class="nav-link">Inicio</a>
-          </li>
-          <li class="nav-item">
-            <a routerLink="/catalogo" routerLinkActive="active" (click)="closeMenu()" class="nav-link">Catálogo</a>
-          </li>
-          <li class="nav-item">
-            <a routerLink="/nuevo-pedido" routerLinkActive="active" (click)="closeMenu()" class="nav-link">Nuevo Pedido</a>
-          </li>
-          <li class="nav-item">
-            <a routerLink="/pedidos" routerLinkActive="active" (click)="closeMenu()" class="nav-link">Pedidos</a>
-          </li>
-        </ul>
-      </nav>
+        <nav class="nav-menu" [class.active]="isMobileMenuOpen">
+          <ul class="nav-list">
+            <li class="nav-item">
+              <a routerLink="/inicio" routerLinkActive="active" (click)="closeMenu()" class="nav-link">Inicio</a>
+            </li>
+            <li class="nav-item">
+              <a routerLink="/catalogo" routerLinkActive="active" (click)="closeMenu()" class="nav-link">Catálogo</a>
+            </li>
+            <li class="nav-item" *ngIf="puedeCrearPedido()">
+              <a routerLink="/nuevo-pedido" routerLinkActive="active" (click)="closeMenu()" class="nav-link">Nuevo Pedido</a>
+            </li>
+            <li class="nav-item">
+              <a routerLink="/pedidos" routerLinkActive="active" (click)="closeMenu()" class="nav-link">Pedidos</a>
+            </li>
+          </ul>
+
+          <!-- Perfil de Usuario y Cerrar Sesión (Mobile) -->
+          <div class="user-profile mobile-only">
+            <div class="user-info">
+              <span class="user-name">{{ usuario.nombre }}</span>
+              <span class="role-badge" [ngClass]="'role-badge--' + usuario.rol.toLowerCase()">{{ usuario.rol }}</span>
+            </div>
+            <button type="button" class="btn btn--outline btn--sm btn-logout" (click)="logout()">
+              Cerrar sesión
+            </button>
+          </div>
+        </nav>
+
+        <!-- Perfil de Usuario y Cerrar Sesión (Desktop) -->
+        <div class="user-profile desktop-only">
+          <div class="user-info">
+            <span class="user-name">{{ usuario.nombre }}</span>
+            <span class="role-badge" [ngClass]="'role-badge--' + usuario.rol.toLowerCase()">{{ usuario.rol }}</span>
+          </div>
+          <button type="button" class="btn btn--outline btn--sm btn-logout" (click)="logout()" title="Cerrar sesión actual">
+            Cerrar sesión
+          </button>
+        </div>
+      </ng-container>
     </div>
   </header>
 

@@ -5,7 +5,7 @@
       <h2 class="view-title">Catálogo de Productos</h2>
       <p class="view-subtitle">Gestión de productos de aseo, existencias y control de estado</p>
     </div>
-    <button class="btn btn--primary" (click)="abrirModalCrear()">
+    <button *ngIf="esAdmin()" class="btn btn--primary" (click)="abrirModalCrear()">
       <span>+</span> Registrar Nuevo Producto
     </button>
   </div>
@@ -74,7 +74,7 @@
           <th>Existencias</th>
           <th>Nivel Stock</th>
           <th>Estado</th>
-          <th>Acciones</th>
+          <th *ngIf="esAdmin()">Acciones</th>
         </tr>
       </thead>
       <tbody>
@@ -102,7 +102,7 @@
               {{ p.activo ? 'ACTIVO' : 'INACTIVO' }}
             </span>
           </td>
-          <td>
+          <td *ngIf="esAdmin()">
             <div class="action-buttons">
               <button class="btn btn--outline btn--sm" (click)="abrirModalEditar(p)" title="Editar producto">
                 Editar

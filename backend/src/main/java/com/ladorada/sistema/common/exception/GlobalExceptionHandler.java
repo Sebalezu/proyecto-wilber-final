@@ -128,6 +128,17 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
     }
 
+    @ExceptionHandler(CredencialesInvalidasException.class)
+    public ResponseEntity<ErrorRespuesta> handleCredencialesInvalidas(CredencialesInvalidasException ex, HttpServletRequest request) {
+        ErrorRespuesta error = new ErrorRespuesta(
+                HttpStatus.UNAUTHORIZED.value(),
+                HttpStatus.UNAUTHORIZED.getReasonPhrase(),
+                ex.getMessage(),
+                request.getRequestURI()
+        );
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
+    }
+
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ErrorRespuesta> handleDataIntegrity(DataIntegrityViolationException ex, HttpServletRequest request) {
         log.warn("Violación de integridad de datos: {}", ex.getMessage());

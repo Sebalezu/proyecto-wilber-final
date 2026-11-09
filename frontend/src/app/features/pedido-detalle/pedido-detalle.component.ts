@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { PedidosService } from '../../core/services/pedidos.service';
 import { CatalogoService } from '../../core/services/catalogo.service';
+import { AuthService } from '../../core/services/auth.service';
 import {
   PedidoDetalle,
   EstadoPedido,
@@ -33,6 +34,19 @@ export class PedidoDetalleComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly pedidosService = inject(PedidosService);
   private readonly catalogoService = inject(CatalogoService);
+  private readonly authService = inject(AuthService);
+
+  puedeConfirmarOModificar(): boolean {
+    return this.authService.hasRole(['ADMINISTRADOR', 'VENDEDOR']);
+  }
+
+  puedeDespachar(): boolean {
+    return this.authService.hasRole(['ADMINISTRADOR', 'BODEGA']);
+  }
+
+  puedeCancelarConfirmado(): boolean {
+    return this.authService.hasRole(['ADMINISTRADOR']);
+  }
 
   pedidoId: number | null = null;
   pedido: PedidoDetalle | null = null;

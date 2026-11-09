@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import { PedidosService } from '../../core/services/pedidos.service';
 import { CatalogoService } from '../../core/services/catalogo.service';
+import { AuthService } from '../../core/services/auth.service';
 import { PedidoResumen, EstadoPedido, Cliente } from '../../shared/models';
 
 @Component({
@@ -16,8 +17,13 @@ import { PedidoResumen, EstadoPedido, Cliente } from '../../shared/models';
 export class PedidosComponent implements OnInit {
   private readonly pedidosService = inject(PedidosService);
   private readonly catalogoService = inject(CatalogoService);
+  private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+
+  puedeCrearPedido(): boolean {
+    return this.authService.hasRole(['ADMINISTRADOR', 'VENDEDOR']);
+  }
 
   pedidos: PedidoResumen[] = [];
   clientes: Cliente[] = [];

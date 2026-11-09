@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { InventarioService } from '../../core/services/inventario.service';
 import { PedidosService } from '../../core/services/pedidos.service';
+import { AuthService } from '../../core/services/auth.service';
 import { Producto, PedidoResumen } from '../../shared/models';
 
 @Component({
@@ -15,6 +16,11 @@ import { Producto, PedidoResumen } from '../../shared/models';
 export class InicioComponent implements OnInit {
   private readonly inventarioService = inject(InventarioService);
   private readonly pedidosService = inject(PedidosService);
+  private readonly authService = inject(AuthService);
+
+  puedeCrearPedido(): boolean {
+    return this.authService.hasRole(['ADMINISTRADOR', 'VENDEDOR']);
+  }
 
   cargando = true;
   error: string | null = null;

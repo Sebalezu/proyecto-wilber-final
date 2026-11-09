@@ -2,6 +2,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CatalogoService } from '../../core/services/catalogo.service';
+import { AuthService } from '../../core/services/auth.service';
 import { Producto, ProductoRequest, ProductoUpdateRequest } from '../../shared/models';
 
 @Component({
@@ -13,6 +14,11 @@ import { Producto, ProductoRequest, ProductoUpdateRequest } from '../../shared/m
 })
 export class CatalogoComponent implements OnInit {
   private readonly catalogoService = inject(CatalogoService);
+  private readonly authService = inject(AuthService);
+
+  esAdmin(): boolean {
+    return this.authService.hasRole(['ADMINISTRADOR']);
+  }
 
   productos: Producto[] = [];
   cargando = false;

@@ -5,7 +5,7 @@
       <h2 class="view-title">Gestión de Pedidos</h2>
       <p class="view-subtitle">Supervisión, filtrado y seguimiento del ciclo de vida de las órdenes de compra.</p>
     </div>
-    <a routerLink="/nuevo-pedido" class="btn btn--primary">
+    <a *ngIf="puedeCrearPedido()" routerLink="/nuevo-pedido" class="btn btn--primary">
       <span>+</span> Registrar Nuevo Pedido
     </a>
   </div>
