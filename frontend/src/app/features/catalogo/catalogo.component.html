@@ -158,11 +158,10 @@
             type="text"
             id="formCodigo"
             class="form-control"
-            placeholder="Ej. ASE-015 (Vacío para autogenerar ASE-XXX)"
+            placeholder="Ej. ASE-015"
             [(ngModel)]="formCodigo"
             name="codigo"
           />
-          <small class="form-hint">Si lo dejas en blanco, el sistema asignará el siguiente consecutivo automático.</small>
         </div>
 
         <div class="form-group" *ngIf="modoEdicion">
@@ -277,7 +276,6 @@
               step="1"
               required
             />
-            <small class="form-hint">Ingrese las unidades físicas que ingresan a bodega para sumarlas al stock.</small>
           </div>
 
           <div class="form-group">

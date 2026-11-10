@@ -214,7 +214,7 @@
           [disabled]="accionEnProgreso"
           (click)="solicitarCancelar()"
         >
-          <span>✕</span> Cancelar Pedido (Restituye Stock)
+          <span>✕</span> Cancelar Pedido
         </button>
 
         <p *ngIf="!puedeDespachar() && !puedeCancelarConfirmado()" class="text-muted font-sm">
@@ -468,10 +468,6 @@
 
       <div class="modal-body">
         <p>{{ modalMensaje }}</p>
-        <div *ngIf="modalAdvertencia" class="modal-alert-warning">
-          <strong>⚠️ Nota Importante:</strong>
-          <p>{{ modalAdvertencia }}</p>
-        </div>
       </div>
 
       <div class="modal-actions">

@@ -112,7 +112,7 @@ export class PedidoDetalleComponent implements OnInit {
     this.abrirModalTransicion(
       'CONFIRMADO',
       'Confirmar Pedido',
-      '¿Está seguro de confirmar este pedido? Se descontarán las existencias del inventario automáticamente.',
+      '¿Está seguro de que desea confirmar este pedido?',
       '',
       'btn--success'
     );
@@ -122,7 +122,7 @@ export class PedidoDetalleComponent implements OnInit {
     this.abrirModalTransicion(
       'DESPACHADO',
       'Despachar Pedido',
-      '¿Desea marcar este pedido como Despachado? Esta acción finaliza la entrega y no podrá revertirse.',
+      '¿Desea marcar este pedido como Despachado?',
       '',
       'btn--primary'
     );
@@ -132,26 +132,18 @@ export class PedidoDetalleComponent implements OnInit {
     this.abrirModalTransicion(
       'RECHAZADO',
       'Rechazar Pedido',
-      '¿Está seguro de rechazar este pedido? El pedido quedará en estado terminal rechazado.',
+      '¿Está seguro de que desea rechazar este pedido?',
       '',
       'btn--danger'
     );
   }
 
   solicitarCancelar(): void {
-    const esConfirmado = this.pedido?.estado === 'CONFIRMADO';
-    const mensaje = esConfirmado
-      ? '¿Desea cancelar el pedido? El inventario reservado será restituido a bodega automáticamente.'
-      : '¿Está seguro de que desea cancelar este pedido?';
-    const advertencia = esConfirmado
-      ? 'Atención: Al cancelar este pedido, los productos descontados serán RESTITUIDOS automáticamente al inventario general.'
-      : 'El pedido pasará a estado cancelado y no generará movimientos de inventario.';
-
     this.abrirModalTransicion(
       'CANCELADO',
-      esConfirmado ? 'Cancelar Envío / Pedido' : 'Cancelar Pedido',
-      mensaje,
-      advertencia,
+      'Cancelar Pedido',
+      '¿Está seguro de que desea cancelar este pedido?',
+      '',
       'btn--danger'
     );
   }

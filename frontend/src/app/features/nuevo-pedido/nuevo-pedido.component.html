@@ -25,9 +25,6 @@
           <strong>{{ d.nombre }}</strong>: pediste <strong>{{ d.solicitado }}</strong> unidades y solo hay <strong>{{ d.disponible }}</strong> disponibles.
         </li>
       </ul>
-      <p class="stock-hint">
-        Sugerencia: Reduce las cantidades solicitadas o guarda el pedido como <strong>PENDIENTE</strong> para no descontar inventario en este momento.
-      </p>
     </div>
   </div>
 
@@ -145,9 +142,8 @@
         <div class="summary-divider"></div>
 
         <div class="summary-total-box">
-          <span class="total-label">Total Estimado</span>
+          <span class="total-label">Total</span>
           <span class="total-amount">${{ calcularTotalPreview() | number:'1.2-2' }} COP</span>
-          <small class="total-note">* El total definitivo y los subtotales son calculados por el servidor con precios vigentes.</small>
         </div>
 
         <div class="action-buttons-stack">
@@ -170,12 +166,6 @@
           >
             {{ enviando ? 'Procesando...' : 'Confirmar pedido' }}
           </button>
-        </div>
-
-        <div class="info-help-box">
-          <p>
-            <strong>Nota:</strong> Al presionar <em>Confirmar pedido</em>, el backend verificará existencias y descontará el inventario inmediatamente.
-          </p>
         </div>
       </div>
     </div>
